@@ -12,7 +12,7 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
 
-  // Form states (SRS-001, SRS-002)
+  // Form states
   const [quantity, setQuantity] = useState<number>(0);
   const [customQtyInput, setCustomQtyInput] = useState<string>('');
   const [title, setTitle] = useState<string>('Bạn');
@@ -21,10 +21,11 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
   const [phone, setPhone] = useState<string>('');
   const [publicMessage, setPublicMessage] = useState<string>('');
   const [showNameOnLog, setShowNameOnLog] = useState<boolean>(true); // mặc định tick hiển thị tên
-  const [consent, setConsent] = useState<boolean>(false); // SRS-002: mặc định KHÔNG tick (NĐ 13/2023)
+  const [consent, setConsent] = useState<boolean>(false); // Mặc định KHÔNG tick (NĐ 13/2023)
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successCode, setSuccessCode] = useState<string | null>(null);
   const [quantityError, setQuantityError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setSuccessCode(null);
 
     // Validate phía client trước khi gửi
     if (!consent) {
@@ -78,8 +80,8 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
       setErrorMsg('Vui lòng nhập họ và tên của bạn.');
       return;
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrorMsg('Vui lòng nhập địa chỉ email hợp lệ để nhận biên nhận và thư cảm ơn.');
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMsg('Địa chỉ email chưa đúng định dạng.');
       return;
     }
     const maxQuantity = summary?.max_quantity ?? 0;
@@ -95,18 +97,21 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
         quantity,
         displayName: displayName.trim(),
         title,
-        email: email.trim(),
+        email: email.trim() || undefined,
         phone: phone.trim() || undefined,
         publicMessage: publicMessage.trim() || undefined,
         isAnonymous: !showNameOnLog,
         consent,
       });
 
-      // Điều hướng sang màn hình chuyển khoản (SRS-003)
-      navigate(`/chuyen-khoan/${res.donation.code}`, {
-        donation: res.donation,
-        instructions: res.transferInstructions,
-      });
+      if (!res.payment?.checkoutUrl) {
+        setSuccessCode(res.donation.code);
+        return;
+      }
+      if (res.statusToken && res.payment.orderCode) {
+        window.localStorage.setItem(`ketvong:payment-status:${res.payment.orderCode}`, res.statusToken);
+      }
+      window.location.assign(res.payment.checkoutUrl);
     } catch (err: any) {
       setErrorMsg(err.message || 'Không thể tạo yêu cầu ủng hộ. Vui lòng thử lại.');
     } finally {
@@ -132,10 +137,10 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
         </p>
       </div>
 
-      {/* Progress Bar & 4 Metrics (SRS-031) */}
+      {/* Progress Bar & 4 Metrics */}
       <ProgressBar summary={summary} />
 
-      {/* Donation Form Card (SRS-001, SRS-002) */}
+      {/* Donation Form Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-brand-border shadow-sm">
         <div className="border-b border-brand-border/60 pb-6 mb-8">
           <h2 className="font-display font-extrabold text-2xl text-brand-text mb-2">
@@ -147,7 +152,7 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 1. Chọn số lượng (SRS-001) */}
+          {/* 1. Chọn số lượng */}
           <div>
             <label className="block text-sm font-bold text-brand-text mb-3">
               1. Chọn số lượng vòng tay ủng hộ
@@ -194,7 +199,7 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
             </div>
           </div>
 
-          {/* 2. Thông tin người ủng hộ (SRS-002) */}
+          {/* 2. Thông tin người ủng hộ */}
           <div className="space-y-5">
             <label className="block text-sm font-bold text-brand-text">
               2. Thông tin người ủng hộ
@@ -240,18 +245,17 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
               {/* Email */}
               <div>
                 <label className="block text-xs font-semibold text-brand-textMuted mb-1.5">
-                  Email nhận Thư Cảm Ơn <span className="text-brand-orange">*</span>
+                  Email nhận Thư Cảm Ơn (không bắt buộc)
                 </label>
                 <input
                   type="email"
-                  required
                   placeholder="email.cua.ban@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-brand-border text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none min-h-touch"
                 />
                 <p className="text-[11px] text-brand-textMuted mt-1">
-                  Hệ thống tự động gửi biên nhận &amp; Thư cảm ơn đến hòm thư này.
+                  Nhập email nếu bạn muốn tự động nhận biên nhận &amp; Thư cảm ơn qua hòm thư.
                 </p>
               </div>
 
@@ -301,7 +305,7 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
               </label>
             </div>
 
-            {/* Checkbox Consent (SRS-002, NĐ 13/2023) - MẶC ĐỊNH KHÔNG TICK */}
+            {/* Checkbox Consent (NĐ 13/2023) - MẶC ĐỊNH KHÔNG TICK */}
             <div className="p-4 rounded-2xl bg-[#faf6f0] border border-brand-border flex items-start gap-3">
               <input
                 id="consent-check"
@@ -312,13 +316,25 @@ export const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
                 className="w-5 h-5 rounded text-brand-orange focus:ring-brand-orange border-brand-border mt-0.5"
               />
               <label htmlFor="consent-check" className="text-xs text-brand-text leading-relaxed cursor-pointer">
-                <span className="font-bold text-brand-text">Đồng ý xử lý dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP):</span> Tôi đồng ý cho phép Ban tổ chức Kết Vòng lưu trữ họ tên, email và thông tin chuyển khoản nhằm mục đích cấp mã, đối chiếu ủng hộ và gửi thư tri ân. Xem <a href="/chinh-sach-bao-mat" className="text-brand-orange font-bold underline">chính sách bảo mật</a>.
+                <span className="font-bold text-brand-text">Đồng ý xử lý dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP):</span> Tôi đồng ý cho phép Ban tổ chức Kết Vòng lưu trữ họ tên, email và thông tin ủng hộ nhằm mục đích cấp mã, đối chiếu ủng hộ và gửi thư tri ân. Xem <a href="/chinh-sach-bao-mat" className="text-brand-orange font-bold underline">chính sách bảo mật</a>.
               </label>
             </div>
           </div>
 
           {/* Lỗi hiển thị nếu có */}
-          {errorMsg && (
+      {successCode && (
+        <div className="p-5 rounded-2xl bg-green-50 border border-green-200 text-green-800 space-y-3">
+          <div className="flex items-center gap-2 font-bold"><CheckCircle2 className="w-5 h-5" /> Đã tạo yêu cầu ủng hộ</div>
+          <p className="text-sm">Đã ghi nhận ủng hộ và gửi email cảm ơn.</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-4 py-3 rounded-xl bg-white border border-green-200 text-center font-mono font-extrabold tracking-wider text-brand-orange">{successCode}</code>
+            <button type="button" onClick={() => navigator.clipboard?.writeText(successCode)} className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-orange text-white font-bold text-xs min-h-touch" title="Sao chép mã ủng hộ">
+              Sao chép mã
+            </button>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
             <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{errorMsg}</span>

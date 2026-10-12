@@ -1,256 +1,223 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryDbAdapter } from '@ketvong/db';
+import bcrypt from 'bcryptjs';
+import { createInMemoryDbAdapter } from '@ketvong/db/sqlite';
 import { generateDonationCode, extractDonationCode } from '../utils/code-generator.js';
-import { signHmacSha256, verifyHmacSha256, hashSha256, generateReceiptToken } from '../utils/hmac.js';
+import { signHmacSha256, verifyHmacSha256 } from '../utils/hmac.js';
 import { MemoryRateLimiter } from '../utils/rate-limiter.js';
-import { processSepayWebhook } from '../services/webhook-service.js';
-import { createDonationIntent, getPublicDonations, verifyReceiptToken } from '../services/donation-service.js';
-import { generateThankYouLetterSvg } from '../services/letter-service.js';
-import { config } from '../config.js';
+import { processPayOSWebhook } from '../services/webhook-service.js';
+import { createDonationIntent, getPublicDonations } from '../services/donation-service.js';
+import { config, createConfig } from '../config.js';
+import { changeAdminPassword, getSession, loginAdmin, logoutAdmin } from '../services/auth-service.js';
+import { sendThankYouEmail, renderThankYouHtml } from '../services/email-service.js';
 
-test('SRS-004: generateDonationCode & extractDonationCode', () => {
-  const code = generateDonationCode();
-  assert.match(code, /^KV-[2-9A-HJ-NP-Z]{6}$/);
-
-  // Không chứa ký tự dễ nhầm 0, O, 1, I
-  assert.ok(!code.includes('0'));
-  assert.ok(!code.includes('1'));
-  assert.ok(!code.includes('O'));
-  assert.ok(!code.includes('I'));
-
-  // Test extract
-  assert.equal(extractDonationCode('Ung ho KV-A2B3C4'), 'KV-A2B3C4');
-  assert.equal(extractDonationCode('k v - a 2 b 3 c 4'), 'KV-A2B3C4');
-  assert.equal(extractDonationCode('no code here'), null);
-});
-
-test('SRS-010: Web Crypto HMAC-SHA256 signature', async () => {
-  const secret = 'my_super_secret_key';
-  const body = JSON.stringify({ id: 123, amount: 50000 });
-  const signature = await signHmacSha256(body, secret);
-
-  assert.equal(await verifyHmacSha256(body, signature, secret), true);
-  assert.equal(await verifyHmacSha256(body, 'wrong_signature', secret), false);
-  assert.equal(await verifyHmacSha256('tampered_body', signature, secret), false);
-});
-
-test('SRS-002: Rate limiter sliding window', () => {
-  const limiter = new MemoryRateLimiter(2, 1000);
-  assert.equal(limiter.isRateLimited('user-ip'), false); // 1st
-  assert.equal(limiter.isRateLimited('user-ip'), false); // 2nd
-  assert.equal(limiter.isRateLimited('user-ip'), true);  // 3rd -> limited!
-});
-
-test('SRS-002 & NFR-07: Consent validation for donations', async () => {
-  const adapter = createInMemoryDbAdapter();
-  await adapter.exec(`
+async function createPaymentDb() {
+  const db = createInMemoryDbAdapter();
+  await db.exec(`
     CREATE TABLE donations (
-      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, expected_amount INTEGER NOT NULL,
-      quantity INTEGER NOT NULL DEFAULT 1, unit_price INTEGER NOT NULL DEFAULT 10000,
-      display_name TEXT NOT NULL, title TEXT NOT NULL, email TEXT NOT NULL,
-      phone TEXT, public_message TEXT, is_anonymous INTEGER NOT NULL DEFAULT 0,
-      consent INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL DEFAULT 'awaiting_transfer',
-      created_at TEXT NOT NULL
+      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, expected_amount INTEGER NOT NULL, actual_amount INTEGER,
+      quantity INTEGER NOT NULL DEFAULT 1, unit_price INTEGER NOT NULL DEFAULT 10000, display_name TEXT NOT NULL,
+      title TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, public_message TEXT, is_anonymous INTEGER NOT NULL DEFAULT 0,
+      consent INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL DEFAULT 'pending_payment', payment_provider TEXT NOT NULL DEFAULT 'payos',
+      provider_order_code INTEGER UNIQUE, provider_payment_link_id TEXT UNIQUE, provider_reference TEXT UNIQUE,
+      payment_checkout_url TEXT, payment_qr_code TEXT, payment_expires_at TEXT, payment_received_at TEXT,
+      payment_raw_event TEXT, receipt_token_hash TEXT, public_status_token_hash TEXT, review_reason TEXT, approved_by TEXT, created_at TEXT NOT NULL,
+      transaction_at TEXT, approved_at TEXT, review_notes TEXT
     );
-    CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
-    INSERT INTO settings (key, value, updated_at) VALUES ('unit_price', '10000', '2026-10-10');
-  `);
-
-  // Phải từ chối khi consent = false (NFR-07: 100% submit thiếu consent bị từ chối)
-  await assert.rejects(
-    async () => {
-      await createDonationIntent(
-        {
-          quantity: 1,
-          displayName: 'Nguyễn Văn A',
-          title: 'Anh',
-          email: 'test@gmail.com',
-          consent: false,
-        },
-        adapter
-      );
-    },
-    { message: /đồng ý với chính sách xử lý dữ liệu cá nhân/ }
-  );
-
-  // Cho phép khi consent = true
-  const res = await createDonationIntent(
-    {
-      quantity: 2,
-      displayName: 'Nguyễn Văn A',
-      title: 'Anh',
-      email: 'test@gmail.com',
-      consent: true,
-    },
-    adapter
-  );
-  assert.ok(res.donation.code);
-  assert.equal(res.donation.expected_amount, 20000);
-});
-
-test('SRS-030 & NFR-05: Public API does not leak PII', async () => {
-  const adapter = createInMemoryDbAdapter();
-  await adapter.execute(`
-    CREATE TABLE donations (
-      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, expected_amount INTEGER NOT NULL,
-      actual_amount INTEGER, display_name TEXT NOT NULL, email TEXT NOT NULL,
-      phone TEXT, public_message TEXT, is_anonymous INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL, approved_at TEXT, created_at TEXT NOT NULL
-    );
-  `);
-
-  await adapter.execute(
-    `INSERT INTO donations (id, code, expected_amount, actual_amount, display_name, email, phone, public_message, is_anonymous, status, approved_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?)`,
-    ['1', 'KV-AAA111', 10000, 10000, 'Người Thật', 'secret@email.com', '0912345678', 'Lời nhắn đẹp', 0, '2026-10-10T10:00:00Z', '2026-10-10T10:00:00Z']
-  );
-
-  await adapter.execute(
-    `INSERT INTO donations (id, code, expected_amount, actual_amount, display_name, email, phone, public_message, is_anonymous, status, approved_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?)`,
-    ['2', 'KV-BBB222', 20000, 20000, 'Tên Bị Ẩn', 'secret2@email.com', '0987654321', null, 1, '2026-10-10T11:00:00Z', '2026-10-10T11:00:00Z']
-  );
-
-  const publicData = await getPublicDonations(1, 10, adapter);
-  assert.equal(publicData.items.length, 2);
-
-  // Kiểm tra tính ẩn danh
-  const anonItem = publicData.items.find((i) => i.amount === 20000);
-  assert.equal(anonItem?.display_name, 'Ẩn danh');
-
-  // NFR-05: Kiểm tra cấu trúc JSON không có email, phone, code, token
-  const jsonDump = JSON.stringify(publicData.items);
-  assert.ok(!jsonDump.includes('secret@email.com'));
-  assert.ok(!jsonDump.includes('0912345678'));
-  assert.ok(!jsonDump.includes('secret2@email.com'));
-  assert.ok(!jsonDump.includes('0987654321'));
-  assert.ok(!jsonDump.includes('Lời nhắn đẹp'));
-});
-
-test('SRS-010 đến SRS-013: Webhook SePay Verification Engine', async () => {
-  const adapter = createInMemoryDbAdapter();
-  await adapter.exec(`
-    CREATE TABLE donations (
-      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, expected_amount INTEGER NOT NULL,
-      actual_amount INTEGER, quantity INTEGER NOT NULL DEFAULT 1, unit_price INTEGER NOT NULL DEFAULT 10000,
-      display_name TEXT NOT NULL, title TEXT NOT NULL, email TEXT NOT NULL,
-      phone TEXT, public_message TEXT, is_anonymous INTEGER NOT NULL DEFAULT 0,
-      consent INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL DEFAULT 'awaiting_transfer',
-      sepay_transaction_id TEXT UNIQUE, receipt_token_hash TEXT, review_reason TEXT,
-      approved_by TEXT, created_at TEXT NOT NULL, transaction_at TEXT, approved_at TEXT, raw_transfer_content TEXT
+    CREATE TABLE payment_events (
+      id TEXT PRIMARY KEY, provider TEXT NOT NULL, provider_order_code INTEGER, provider_reference TEXT,
+      payment_link_id TEXT, event_signature TEXT NOT NULL UNIQUE, payload TEXT NOT NULL, received_at TEXT NOT NULL
     );
     CREATE TABLE email_logs (
-      id TEXT PRIMARY KEY, donation_id TEXT NOT NULL, recipient_email TEXT NOT NULL,
-      subject TEXT NOT NULL, status TEXT NOT NULL, error_message TEXT,
-      message_id TEXT, sent_at TEXT NOT NULL
+      id TEXT PRIMARY KEY, donation_id TEXT NOT NULL, recipient_email TEXT NOT NULL, subject TEXT NOT NULL,
+      status TEXT NOT NULL, error_message TEXT, message_id TEXT, sent_at TEXT NOT NULL
     );
-    CREATE TABLE templates (
-      key TEXT PRIMARY KEY, subject TEXT, content TEXT NOT NULL, updated_at TEXT NOT NULL
-    );
+    CREATE TABLE templates (key TEXT PRIMARY KEY, subject TEXT, content TEXT NOT NULL, updated_at TEXT NOT NULL);
     CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE admins (
+      id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin', must_change_password INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL
+    );
+    CREATE TABLE admin_sessions (
+      token_hash TEXT PRIMARY KEY, admin_id TEXT NOT NULL, email TEXT NOT NULL, name TEXT NOT NULL,
+      role TEXT NOT NULL, must_change_password INTEGER NOT NULL DEFAULT 1, expires_at INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
     INSERT INTO settings (key, value, updated_at) VALUES ('unit_price', '10000', '2026-10-10');
+    INSERT INTO templates (key, subject, content, updated_at) VALUES ('email_thank_you', 'Cảm ơn {{name}}', 'Cảm ơn {{name}} {{amount}} {{code}} {{receipt_url}}', '2026-10-10');
   `);
+  return db;
+}
 
-  // Tạo một donation đang chờ
-  const code = 'KV-HAPPY2';
-  await adapter.execute(
-    `INSERT INTO donations (id, code, expected_amount, display_name, title, email, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'awaiting_transfer', ?)`,
-    ['d-1', code, 20000, 'Test Donor', 'Bạn', 'donor@test.com', '2026-10-10T00:00:00Z']
-  );
-
-  const rawSecret = 'sepay_webhook_hmac_secret_test_key_123456';
-  config.sepayWebhookSecret = rawSecret;
-
-  // 1. Chữ ký sai -> rejected
-  const badBody = JSON.stringify({ id: 101, transferAmount: 20000, content: `Ung ho ${code}` });
-  const badRes = await processSepayWebhook(
-    JSON.parse(badBody),
-    badBody,
-    'invalid_sig',
-    null,
-    adapter
-  );
-  assert.equal(badRes.action, 'rejected');
-
-  // 2. Happy Path: Chữ ký đúng, Khớp mã + Tiền đúng tuyệt đối (SRS-012)
-  const goodBody = JSON.stringify({ id: 102, transferAmount: 20000, content: `Ung ho ${code}` });
-  const goodSig = await signHmacSha256(goodBody, rawSecret);
-  const goodRes = await processSepayWebhook(
-    JSON.parse(goodBody),
-    goodBody,
-    goodSig,
-    null,
-    adapter
-  );
-  assert.equal(goodRes.action, 'approved');
-
-  // Kiểm tra DB đã cập nhật approved và có hash receipt token
-  const approvedItem = await adapter.queryOne<any>('SELECT * FROM donations WHERE id = ?', ['d-1']);
-  assert.equal(approvedItem.status, 'approved');
-  assert.equal(approvedItem.actual_amount, 20000);
-  assert.ok(approvedItem.receipt_token_hash);
-
-  // 3. Idempotency (SRS-011): Gửi lại cùng transaction 102 -> Bỏ qua
-  const retryRes = await processSepayWebhook(
-    JSON.parse(goodBody),
-    goodBody,
-    goodSig,
-    null,
-    adapter
-  );
-  assert.equal(retryRes.action, 'idempotent_skip');
-
-  // 4. Lệch số tiền (SRS-012): Mã đúng nhưng chuyển 15.000đ thay vì 20.000đ
-  const code2 = 'KV-MESMAT';
-  await adapter.execute(
-    `INSERT INTO donations (id, code, expected_amount, display_name, title, email, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'awaiting_transfer', ?)`,
-    ['d-2', code2, 20000, 'Mismatch Donor', 'Bạn', 'donor2@test.com', '2026-10-10T00:00:00Z']
-  );
-  const mismatchBody = JSON.stringify({ id: 103, transferAmount: 15000, content: `Ung ho ${code2}` });
-  const mismatchSig = await signHmacSha256(mismatchBody, rawSecret);
-  const mismatchRes = await processSepayWebhook(
-    JSON.parse(mismatchBody),
-    mismatchBody,
-    mismatchSig,
-    null,
-    adapter
-  );
-  assert.equal(mismatchRes.action, 'manual_review');
-  assert.equal(mismatchRes.reason, 'amount_mismatch');
-
-  // 5. Thiếu mã chuyển khoản (SRS-012):
-  const noCodeBody = JSON.stringify({ id: 104, transferAmount: 50000, content: 'Chuyen tien khong ghi ma' });
-  const noCodeSig = await signHmacSha256(noCodeBody, rawSecret);
-  const noCodeRes = await processSepayWebhook(
-    JSON.parse(noCodeBody),
-    noCodeBody,
-    noCodeSig,
-    null,
-    adapter
-  );
-  assert.equal(noCodeRes.action, 'manual_review');
-  assert.equal(noCodeRes.reason, 'missing_code');
+test('Payment utilities: code, HMAC, rate limiter', async () => {
+  const code = generateDonationCode();
+  assert.match(code, /^KV-[2-9A-HJ-NP-Z]{6}$/);
+  assert.equal(extractDonationCode('Ung ho KV-A2B3C4'), 'KV-A2B3C4');
+  const signature = await signHmacSha256('payload', 'secret');
+  assert.equal(await verifyHmacSha256('payload', signature, 'secret'), true);
+  assert.equal(await verifyHmacSha256('tampered', signature, 'secret'), false);
+  const limiter = new MemoryRateLimiter(1, 1000);
+  assert.equal(limiter.isRateLimited('ip'), false);
+  assert.equal(limiter.isRateLimited('ip'), true);
+});
+test('Security config fails closed outside explicit local mode', () => {
+  assert.throws(() => createConfig({ BYPASS_PAYMENT: 'true' }), /DEPLOYMENT_ENV=local/);
+  assert.throws(() => createConfig({ BYPASS_PAYMENT: 'true', DEPLOYMENT_ENV: 'staging' }), /chỉ được phép/);
+  assert.equal(createConfig({ BYPASS_PAYMENT: 'true', DEPLOYMENT_ENV: 'local' }).bypassPayment, true);
 });
 
-test('SRS-041: Thank You Letter SVG generation', async () => {
-  const svg = await generateThankYouLetterSvg({
-    code: 'KV-TEST99',
-    title: 'Chị',
-    displayName: 'Ngọc Lan',
+test('Admin sessions persist in the database and survive request boundaries', async () => {
+  const db = await createPaymentDb();
+  const passwordHash = await bcrypt.hash('SeedPassword123!', 12);
+  await db.execute(
+    `INSERT INTO admins (id, email, password_hash, name, role, must_change_password, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ['admin-1', 'admin@test.com', passwordHash, 'Admin Test', 'admin', 1, '2026-10-10T00:00:00Z']
+  );
+
+  const { sessionToken } = await loginAdmin('admin@test.com', 'SeedPassword123!', '127.0.0.1', db);
+  assert.equal((await getSession(sessionToken, db))?.mustChangePassword, true);
+
+  await changeAdminPassword('admin-1', 'NewPassword123!', db);
+  assert.equal(await getSession(sessionToken, db), null);
+
+  await logoutAdmin(sessionToken, db);
+  assert.equal(await getSession(sessionToken, db), null);
+});
+
+test('Donation consent is mandatory', async () => {
+  const db = await createPaymentDb();
+  await assert.rejects(
+    () => createDonationIntent({ quantity: 1, displayName: 'Nguyễn Văn A', title: 'Anh', email: 'test@example.com', consent: false }, db, { createPayment: false }),
+    /đồng ý với chính sách xử lý dữ liệu cá nhân/
+  );
+});
+
+test('Donation quantity must be a positive integer', async () => {
+  const db = await createPaymentDb();
+  await assert.rejects(
+    () => createDonationIntent({ quantity: 0, displayName: 'Nguyễn Văn A', title: 'Anh', email: 'test@example.com', consent: true }, db, { createPayment: false }),
+    /Số lượng vòng tay ủng hộ phải là số nguyên dương/
+  );
+  assert.equal((await db.queryOne<{ count: number }>('SELECT COUNT(*) AS count FROM donations'))?.count, 0);
+});
+
+test('Donation email is optional', async () => {
+  const db = await createPaymentDb();
+  const res = await createDonationIntent(
+    { quantity: 1, displayName: 'Người Không Email', title: 'Bạn', consent: true },
+    db,
+    { createPayment: false }
+  );
+  assert.ok(res.donation.code.startsWith('KV-'));
+  const saved = await db.queryOne<any>('SELECT email FROM donations WHERE id = ?', [res.donation.id]);
+  assert.equal(saved?.email, '');
+});
+
+test('PayOS webhook approves exact payment and skips duplicate', async () => {
+  const db = await createPaymentDb();
+  config.payos.checksumKey = 'payos_test_checksum_key';
+  await db.execute(
+    `INSERT INTO donations (id, code, expected_amount, quantity, unit_price, display_name, title, email, status, provider_order_code, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?)`,
+    ['d-1', 'KV-HAPPY2', 20000, 2, 10000, 'Test Donor', 'Bạn', 'donor@test.com', 202610100001, '2026-10-10T00:00:00Z']
+  );
+  const data = { orderCode: 202610100001, amount: 20000, description: 'KV-HAPPY2', reference: 'REF-1', transactionDateTime: '2026-10-10T01:00:00Z', paymentLinkId: 'plink-1' };
+  const canonical = Object.keys(data).sort().map((key) => `${key}=${(data as any)[key]}`).join('&');
+  const payload = { code: '00', desc: 'success', success: true, data, signature: await signHmacSha256(canonical, config.payos.checksumKey) };
+  const raw = JSON.stringify(payload);
+  const first = await processPayOSWebhook(payload, raw, db);
+  assert.equal(first.action, 'approved');
+  assert.equal((await db.queryOne<any>('SELECT status, actual_amount FROM donations WHERE id = ?', ['d-1'])).status, 'approved');
+  const second = await processPayOSWebhook(payload, raw, db);
+  assert.equal(second.action, 'idempotent_skip');
+});
+
+test('PayOS webhook accepts confirmation payload without success field', async () => {
+  const db = await createPaymentDb();
+  config.payos.checksumKey = 'payos_test_checksum_key';
+  await db.execute(
+    `INSERT INTO donations (id, code, expected_amount, quantity, unit_price, display_name, title, email, status, provider_order_code, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?)`,
+    ['d-confirm', 'KV-C2NF2R', 10000, 1, 10000, 'Confirm Test', 'Bạn', 'confirm@test.com', 202610100003, '2026-10-10T00:00:00Z']
+  );
+  const data = { orderCode: 202610100003, amount: 10000, description: 'KV-C2NF2R', reference: 'REF-CONFIRM' };
+  const canonical = Object.keys(data).sort().map((key) => `${key}=${(data as any)[key]}`).join('&');
+  const payload = { code: '00', data, signature: await signHmacSha256(canonical, config.payos.checksumKey) };
+
+  const result = await processPayOSWebhook(payload, JSON.stringify(payload), db);
+  assert.equal(result.action, 'approved');
+  assert.equal((await db.queryOne<any>('SELECT status FROM donations WHERE id = ?', ['d-confirm'])).status, 'approved');
+});
+
+test('PayOS webhook sends amount mismatch to manual review and public API hides PII', async () => {
+  const db = await createPaymentDb();
+  config.payos.checksumKey = 'payos_test_checksum_key';
+  await db.execute(`INSERT INTO donations (id, code, expected_amount, display_name, title, email, status, provider_order_code, created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?)`, ['d-2', 'KV-MISMAT', 20000, 'Người Thật', 'Bạn', 'secret@example.com', 202610100002, '2026-10-10T00:00:00Z']);
+  const data = { orderCode: 202610100002, amount: 15000, description: 'KV-MISMAT', reference: 'REF-2' };
+  const canonical = Object.keys(data).sort().map((key) => `${key}=${(data as any)[key]}`).join('&');
+  const payload = { code: '00', desc: 'success', success: true, data, signature: await signHmacSha256(canonical, config.payos.checksumKey) };
+  const result = await processPayOSWebhook(payload, JSON.stringify(payload), db);
+  assert.equal(result.reason, 'amount_mismatch');
+  assert.equal((await db.queryOne<any>('SELECT status FROM donations WHERE id = ?', ['d-2'])).status, 'manual_review');
+  const publicData = await getPublicDonations(1, 10, db);
+  assert.ok(!JSON.stringify(publicData).includes('secret@example.com'));
+});
+
+test('getPublicDonations returns public_message when present', async () => {
+  const db = await createPaymentDb();
+  await db.execute(
+    `INSERT INTO donations (id, code, expected_amount, display_name, title, email, status, public_message, created_at, approved_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'approved', ?, '2026-10-10T00:00:00Z', '2026-10-10T00:01:00Z')`,
+    ['d-msg', 'KV-MSG001', 20000, 'Bạn Hảo Tâm', 'Bạn', 'msg@example.com', 'Chúc các bé mau khỏi bệnh!']
+  );
+  const publicData = await getPublicDonations(1, 10, db);
+  const found = publicData.items.find((i) => i.display_name === 'Bạn Hảo Tâm');
+  assert.equal(found?.public_message, 'Chúc các bé mau khỏi bệnh!');
+});
+
+test('sendThankYouEmail replaces {{receipt_url}} and {{receiptUrl}} properly', async () => {
+  const db = await createPaymentDb();
+  await db.execute(
+    "UPDATE templates SET content = 'Chào {{title}} {{name}}, mã {{code}}, số tiền {{amount}}đ. Xem biên nhận tại {{receipt_url}}' WHERE key = 'email_thank_you'"
+  );
+
+  const sent = await sendThankYouEmail({
+    donationId: 'd-test-email',
+    code: 'KV-TEST01',
+    email: 'recipient@test.com',
+    title: 'Anh',
+    name: 'Nguyễn Văn B',
     amount: 50000,
     quantity: 5,
-    approvedAt: '2026-10-10T12:00:00Z',
-    receiptToken: 'sample_token_123',
+    receiptToken: 'token123456',
+  }, db);
+
+  assert.equal(sent, true);
+  const log = await db.queryOne<any>('SELECT * FROM email_logs WHERE donation_id = ?', ['d-test-email']);
+  assert.ok(log);
+  assert.equal(log.status, 'success');
+
+  // Verify renderThankYouHtml cleans receipt_url and renders valid html
+  const rawTemplate = 'Chào {{title}} {{name}},\n\nCảm ơn bạn đã ủng hộ {{amount}}đ.\n\nMã ủng hộ: {{code}}\nXem biên nhận minh bạch và tải Thư cảm ơn tại:\n{{receipt_url}}\n\nTrân trọng,\nBan Tổ Chức Workshop Kết Vòng';
+  const receiptUrl = `${config.publicBaseUrl}/dong-gop/KV-TEST01#access=token123456`;
+  const resolvedContent = rawTemplate
+    .replace(/{{title}}/g, 'Anh')
+    .replace(/{{name}}/g, 'Nguyễn Văn B')
+    .replace(/{{amount}}/g, '50.000')
+    .replace(/{{code}}/g, 'KV-TEST01')
+    .replace(/{{receipt_url}}/g, receiptUrl);
+
+  const html = renderThankYouHtml(resolvedContent, receiptUrl, {
+    title: 'Anh',
+    name: 'Nguyễn Văn B',
+    amount: 50000,
+    quantity: 5,
+    code: 'KV-TEST01',
   });
 
-  assert.ok(svg.includes('<svg'));
-  assert.ok(svg.includes('THƯ CẢM ƠN'));
-  assert.ok(svg.includes('Ngọc Lan'));
-  assert.ok(svg.includes('KV-TEST99'));
-  assert.ok(svg.includes('50.000 VNĐ'));
-  // Chứa path QR code
-  assert.ok(svg.includes('path') || svg.includes('rect'));
+  assert.ok(!html.includes('{{receipt_url}}'));
+  assert.ok(!html.includes('{{receiptUrl}}'));
+  assert.ok(html.includes(receiptUrl));
 });
+

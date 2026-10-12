@@ -46,24 +46,24 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ navigate, onLogi
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 border border-brand-border shadow-md">
+      <div className="w-full max-w-md bg-[var(--color-surface)] rounded-3xl p-8 sm:p-10 border-2 border-[var(--color-border-strong)] shadow-md">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-xs font-bold text-brand-textMuted hover:text-brand-orange mb-6 min-h-touch"
+          className="flex items-center gap-2 text-xs font-bold text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)] mb-6 min-h-touch font-display"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Về trang chủ</span>
         </button>
 
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-brand-accent text-brand-orange flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] flex items-center justify-center mx-auto mb-3">
             <Lock className="w-6 h-6" />
           </div>
-          <h1 className="font-display font-extrabold text-2xl text-brand-text">
+          <h1 className="font-display font-extrabold text-2xl text-[var(--kv-ink)]">
             Đăng Nhập Quản Trị
           </h1>
-          <p className="text-xs text-brand-textMuted mt-1">
-            Dành cho Ban tổ chức dự án Kết Vòng (SRS-060)
+          <p className="text-xs text-[var(--kv-text-soft)] mt-1 font-body mx-auto text-center">
+            Dành cho Ban tổ chức dự án Kết Vòng
           </p>
         </div>
 
@@ -78,41 +78,52 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ navigate, onLogi
           {mustChangePassword && (
             <div className="p-3 rounded-xl bg-amber-50 text-amber-900 text-xs">Đây là lần đăng nhập đầu tiên. Hãy đặt mật khẩu mới dài ít nhất 8 ký tự.</div>
           )}
-          {!mustChangePassword && <div>
-            <label className="block text-xs font-semibold text-brand-textMuted mb-1.5">
-              Email Quản Trị
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-brand-textMuted absolute left-3.5 top-3.5" />
+          {!mustChangePassword && (
+            <div>
+              <label className="block text-xs font-semibold text-[var(--kv-text-soft)] mb-1.5 font-display">
+                Email Quản Trị
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-[var(--kv-text-soft)] absolute left-3.5 top-3.5" />
+                <input
+                  type="email"
+                  required
+                  placeholder="Nhập email quản trị"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border-strong)] text-sm bg-white focus:border-[var(--kv-ink)] outline-none min-h-touch"
+                />
+              </div>
+            </div>
+          )}
+
+          {mustChangePassword && (
+            <div>
+              <label className="block text-xs font-semibold text-[var(--kv-text-soft)] mb-1.5 font-display">Mật khẩu mới</label>
               <input
-                type="email"
+                type="password"
                 required
-                placeholder="Nhập email quản trị"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-border text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none min-h-touch"
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-strong)] text-sm min-h-touch bg-white focus:border-[var(--kv-ink)] outline-none"
               />
             </div>
-          </div>}
-
-          {mustChangePassword && <div>
-            <label className="block text-xs font-semibold text-brand-textMuted mb-1.5">Mật khẩu mới</label>
-            <input type="password" required minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-brand-border text-sm min-h-touch" />
-          </div>}
+          )}
 
           <div>
-            <label className="block text-xs font-semibold text-brand-textMuted mb-1.5">
+            <label className="block text-xs font-semibold text-[var(--kv-text-soft)] mb-1.5 font-display">
               Mật Khẩu
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-brand-textMuted absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-[var(--kv-text-soft)] absolute left-3.5 top-3.5" />
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-border text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none min-h-touch"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border-strong)] text-sm bg-white focus:border-[var(--kv-ink)] outline-none min-h-touch"
               />
             </div>
           </div>
@@ -120,17 +131,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ navigate, onLogi
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-6 rounded-2xl bg-brand-orange hover:bg-brand-orangeHover text-white font-display font-bold text-base shadow-lg shadow-brand-orange/20 transition-all min-h-touch flex items-center justify-center gap-2"
+            className="w-full kv-btn kv-btn--primary py-3.5 px-6 text-base font-bold shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? 'Đang xử lý...' : mustChangePassword ? 'Lưu mật khẩu mới' : 'Đăng Nhập'}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-brand-border/60 text-center text-[11px] text-brand-textMuted leading-relaxed">
-          Tài khoản mặc định được seed qua lệnh CLI: <code className="bg-brand-bg px-1.5 py-0.5 rounded font-mono">pnpm seed:admin</code>
-        </div>
       </div>
     </div>
   );
 };
-

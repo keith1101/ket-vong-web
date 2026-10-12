@@ -6,14 +6,17 @@ export class MemoryRateLimiter {
   private records = new Map<string, RateLimitRecord>();
   private maxRequests: number;
   private windowMs: number;
+  private readonly maxKeys: number;
 
-  constructor(maxRequests: number, windowMs: number) {
+  constructor(maxRequests: number, windowMs: number, maxKeys = 10_000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
+    this.maxKeys = maxKeys;
   }
 
   isRateLimited(key: string): boolean {
     const now = Date.now();
+    this.evictExpired(now);
     const record = this.records.get(key) || { timestamps: [] };
 
     // Lọc bỏ các timestamp ngoài khoảng thời gian window
@@ -24,6 +27,10 @@ export class MemoryRateLimiter {
       return true;
     }
 
+    if (!this.records.has(key) && this.records.size >= this.maxKeys) {
+      // Fail closed when the bounded local fallback is saturated.
+      return true;
+    }
     record.timestamps.push(now);
     this.records.set(key, record);
     return false;
@@ -31,6 +38,14 @@ export class MemoryRateLimiter {
 
   reset(key: string): void {
     this.records.delete(key);
+  }
+
+  private evictExpired(now: number): void {
+    for (const [key, record] of this.records) {
+      if (record.timestamps.every((timestamp) => now - timestamp >= this.windowMs)) {
+        this.records.delete(key);
+      }
+    }
   }
 }
 

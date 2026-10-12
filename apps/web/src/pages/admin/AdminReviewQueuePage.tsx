@@ -118,7 +118,7 @@ export const AdminReviewQueuePage: React.FC = () => {
             Hàng chờ xử lý giao dịch cần đối chiếu
           </h2>
           <p className="text-xs text-brand-textMuted mt-1">
-            Các giao dịch sai số tiền, thiếu mã hoặc gửi trùng cần admin đối chiếu tay (SRS-020)
+            Các giao dịch đã thanh toán nhưng chưa khớp tự động cần được kiểm tra tại đây.
           </p>
         </div>
         <button
@@ -136,7 +136,7 @@ export const AdminReviewQueuePage: React.FC = () => {
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
           <h3 className="font-display font-bold text-lg text-brand-text">Không Có Ca Lệch Nào Cần Xử Lý</h3>
           <p className="text-xs text-brand-textMuted mt-1">
-            Tuyệt vời! Tất cả các giao dịch từ SePay đều đã được khớp tự động hoặc xử lý hoàn tất.
+            Tuyệt vời! Tất cả giao dịch đều đã được khớp tự động hoặc xử lý hoàn tất.
           </p>
         </div>
       ) : (
@@ -164,26 +164,26 @@ export const AdminReviewQueuePage: React.FC = () => {
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${reasonBadge.bg}`}>
                       {reasonBadge.label}
                     </span>
-                    <span className="text-xs text-brand-textMuted">| Mã giao dịch: {item.sepay_transaction_id || 'Chưa có'}</span>
+                    <span className="text-xs text-brand-textMuted">| Mã giao dịch ngân hàng: {item.provider_reference || item.provider_order_code || 'Chưa có'}</span>
                   </div>
 
                   <div className="text-xs text-brand-text space-y-1">
                     <div>
                       <span className="text-brand-textMuted">Người đăng ký:</span>{' '}
-                      <span className="font-bold">{item.display_name}</span> ({item.email})
+                      <span className="font-bold">{item.display_name}</span> {item.email ? `(${item.email})` : '(Không có email)'}
                     </div>
                     <div>
                       <span className="text-brand-textMuted">Kỳ vọng:</span>{' '}
                       <span className="font-bold">{item.expected_amount.toLocaleString('vi-VN')} đ</span> |{' '}
-                      <span className="text-brand-textMuted">Thực nhận SePay:</span>{' '}
+                        <span className="text-brand-textMuted">Số tiền thực chuyển:</span>{' '}
                       <span className="font-extrabold text-brand-orange">
                         {(item.actual_amount || 0).toLocaleString('vi-VN')} đ
                       </span>
                     </div>
-                    {item.raw_transfer_content && (
+                    {item.payment_raw_event && (
                       <div className="p-2 bg-brand-bg rounded-lg font-mono text-[11px] text-brand-text break-all border border-brand-border">
-                        <span className="text-brand-textMuted font-sans">Nội dung CK gốc: </span>
-                        {item.raw_transfer_content}
+                        <span className="text-brand-textMuted font-sans">Dữ liệu đối chiếu: </span>
+                        {item.payment_raw_event}
                       </div>
                     )}
                     <div className="text-[11px] text-brand-textMuted">Thời gian: {date}</div>
@@ -243,7 +243,7 @@ export const AdminReviewQueuePage: React.FC = () => {
             {actionType === 'approve' && (
               <div className="space-y-4">
                 <p className="text-xs text-brand-textMuted">
-                  Hệ thống sẽ cập nhật trạng thái <span className="font-bold text-green-600">approved</span>, tạo token biên nhận và tự động gửi thư cảm ơn qua Gmail cho người ủng hộ.
+                  Hệ thống sẽ cập nhật trạng thái <span className="font-bold text-green-600">Đã duyệt</span>, phát hành biên nhận và tự động gửi thư cảm ơn đến email người ủng hộ.
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-brand-text mb-1">
@@ -277,7 +277,7 @@ export const AdminReviewQueuePage: React.FC = () => {
             {actionType === 'reject' && (
               <div className="space-y-4">
                 <p className="text-xs text-brand-textMuted">
-                  Bắt buộc nhập lý do từ chối (SRS-020). Giao dịch sẽ không được tính vào quỹ và không gửi mail.
+                  Bắt buộc nhập lý do từ chối. Giao dịch sẽ không được tính vào quỹ và không gửi mail.
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-brand-text mb-1">
@@ -285,7 +285,7 @@ export const AdminReviewQueuePage: React.FC = () => {
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Ví dụ: Chuyển khoản nhầm nội dung / Hoàn tiền lại theo yêu cầu..."
+                    placeholder="Ví dụ: Ủng hộ nhầm nội dung / Hoàn tiền lại theo yêu cầu..."
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"

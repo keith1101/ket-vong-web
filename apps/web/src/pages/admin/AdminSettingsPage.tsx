@@ -52,10 +52,10 @@ export const AdminSettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h2 className="font-display font-bold text-2xl text-brand-text">
-          Cài Đặt Hệ Thống (SRS-062)
+          Cài Đặt Hệ Thống
         </h2>
         <p className="text-xs text-brand-textMuted mt-1">
-          Super-admin có thể cấu hình toàn bộ nội dung động mà không cần sửa mã nguồn hay build lại.
+          Quản lý thông tin chiến dịch, số tiền và các cài đặt chung của hệ thống.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export const AdminSettingsPage: React.FC = () => {
         {/* Phần 1: Gây quỹ & Đơn giá */}
         <div>
           <h3 className="font-display font-bold text-base text-brand-text border-b border-brand-border/60 pb-2 mb-4">
-            1. Cấu Hình Chiến Dịch &amp; Đơn Giá Ủng Hộ (REQ-02, SRS-001)
+            1. Cấu Hình Chiến Dịch &amp; Đơn Giá Ủng Hộ
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -103,7 +103,7 @@ export const AdminSettingsPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-brand-textMuted mb-1">
-                Mức Preset số lượng (JSON array):
+                Các mức số lượng gợi ý:
               </label>
               <input
                 type="text"
@@ -111,7 +111,7 @@ export const AdminSettingsPage: React.FC = () => {
                 onChange={(e) => handleChange('presets', e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs font-mono"
               />
-              <span className="text-[10px] text-brand-textMuted">Ví dụ: [1] hoặc [1, 2, 5]</span>
+              <span className="text-[10px] text-brand-textMuted">Ví dụ: [1] hoặc [1, 2, 5] (danh sách số lượng gợi ý chọn nhanh)</span>
             </div>
           </div>
         </div>
@@ -119,7 +119,7 @@ export const AdminSettingsPage: React.FC = () => {
         {/* Phần 2: Tài khoản ngân hàng nhận tiền */}
         <div>
           <h3 className="font-display font-bold text-base text-brand-text border-b border-brand-border/60 pb-2 mb-4">
-            2. Tài Khoản Ngân Hàng Tiếp Nhận &amp; QR Code (SRS-003, REQ-03)
+            2. Tài Khoản Ngân Hàng Tiếp Nhận &amp; QR Code
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>

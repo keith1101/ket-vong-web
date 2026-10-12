@@ -2,14 +2,23 @@
   "name": "ketvong-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Website Kết Vòng — Quyên góp minh bạch tự động qua SePay",
+  "description": "Website Kết Vòng — Quyên góp minh bạch tự động qua PayOS",
   "scripts": {
     "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"cyan,magenta\" \"tsx apps/api/src/index.ts\" \"node apps/web/node_modules/vite/bin/vite.js apps/web --port 3000\"",
     "build": "tsx scripts/build.ts",
     "test": "tsx scripts/test.ts",
     "db:migrate": "tsx packages/db/src/migrate.ts",
     "seed:admin": "tsx packages/db/src/seed.ts",
-    "webhook:simulate": "tsx apps/api/src/scripts/simulate-webhook.ts"
+    "cf:seed:admin": "tsx packages/db/src/seed-d1.ts",
+    "webhook:simulate": "tsx apps/api/src/scripts/simulate-webhook.ts",
+    "cf:d1:create": "wrangler d1 create ketvong-prod",
+    "cf:d1:migrate:local": "wrangler d1 migrations apply ketvong-prod --local",
+    "cf:d1:migrate:remote": "wrangler d1 migrations apply ketvong-prod --remote",
+    "cf:d1:migrate:staging": "wrangler d1 migrations apply ketvong-staging --remote --config wrangler.staging.jsonc",
+    "cf:build:packages": "node node_modules/typescript/bin/tsc -p packages/db/tsconfig.json --pretty false",
+    "cf:dev": "wrangler dev --config wrangler.jsonc",
+    "cf:deploy": "wrangler deploy --config wrangler.jsonc",
+    "cf:deploy:staging": "tsx scripts/deploy-staging-with-env.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

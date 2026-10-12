@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminGetReports } from '../../api';
+import { API_BASE, adminGetReports, apiFetch } from '../../api';
 import type { DailyReport } from '../../types';
 import { Plus, FileText, Calendar, DollarSign, Image } from 'lucide-react';
 
@@ -45,7 +45,7 @@ export const AdminReportsPage: React.FC = () => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const res = await fetch(editingId ? `/api/v1/admin/reports/${editingId}` : '/api/v1/admin/reports', {
+      const res = await apiFetch(editingId ? `${API_BASE}/admin/reports/${editingId}` : `${API_BASE}/admin/reports`, {
         method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -82,10 +82,10 @@ export const AdminReportsPage: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h2 className="font-display font-bold text-2xl text-brand-text">
-          Quản Lý Báo Cáo Thu / Chi Hàng Ngày (SRS-063)
+          Quản Lý Báo Cáo Thu / Chi Hàng Ngày
         </h2>
         <p className="text-xs text-brand-textMuted mt-1">
-          Đăng bài báo cáo tài chính hàng ngày bằng Markdown để hiển thị công khai trên trang minh bạch.
+          Đăng bài báo cáo tài chính hàng ngày để hiển thị công khai trên trang minh bạch.
         </p>
       </div>
 
@@ -160,7 +160,7 @@ export const AdminReportsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-brand-textMuted mb-1">
-              Nội dung chi tiết (Định dạng Markdown):
+              Nội dung chi tiết báo cáo:
             </label>
             <textarea
               rows={6}

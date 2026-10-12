@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Mail, RefreshCw } from 'lucide-react';
+import { API_BASE, apiFetch } from '../../api';
 
 export const AdminLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<{ auditLogs: any[]; emailLogs: any[] }>({ auditLogs: [], emailLogs: [] });
@@ -9,7 +10,7 @@ export const AdminLogsPage: React.FC = () => {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/admin/logs');
+      const res = await apiFetch(`${API_BASE}/admin/logs`);
       const json = await res.json();
       setLogs(json.data || { auditLogs: [], emailLogs: [] });
     } catch (err) {
@@ -20,7 +21,7 @@ export const AdminLogsPage: React.FC = () => {
   };
 
   const resendEmail = async (id: string) => {
-    const res = await fetch(`/api/v1/admin/emails/${id}/resend`, { method: 'POST' });
+    const res = await apiFetch(`${API_BASE}/admin/emails/${id}/resend`, { method: 'POST' });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data?.error?.message || data?.message || 'Không thể gửi lại email.');
     await loadLogs();
@@ -35,7 +36,7 @@ export const AdminLogsPage: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="font-display font-bold text-2xl text-brand-text">
-            Nhật ký hệ thống (SRS-064)
+            Nhật ký hệ thống
           </h2>
           <p className="text-xs text-brand-textMuted mt-1">
             Lịch sử thao tác quản trị viên và nhật ký gửi email cảm ơn tự động.

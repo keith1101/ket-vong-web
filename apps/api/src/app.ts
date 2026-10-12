@@ -11,6 +11,13 @@ import { config } from './config.js';
 export function createApp(): Hono {
   const app = new Hono();
 
+  app.use('*', async (c, next) => {
+    await next();
+    c.header('X-Content-Type-Options', 'nosniff');
+    c.header('X-Frame-Options', 'DENY');
+    c.header('Referrer-Policy', 'no-referrer');
+  });
+
   // Logging & CORS
   app.use('*', logger());
   app.use(
@@ -18,7 +25,7 @@ export function createApp(): Hono {
     cors({
       origin: config.publicBaseUrl,
       credentials: true,
-      allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Admin-Token', 'X-Sepay-Signature'],
+      allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Admin-Token', 'X-CSRF-Token'],
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })
   );
@@ -48,12 +55,12 @@ export function createApp(): Hono {
 
   // Xử lý lỗi toàn cục (SRS §5.1: Mọi response lỗi { error: { code: "X", message: "..." } })
   app.onError((err, c) => {
-    console.error('[Hono Server Error]:', err);
+    console.error('[Hono Server Error]:', err.name, err.message);
     return c.json(
       {
         error: {
           code: 'INTERNAL_SERVER_ERROR',
-          message: err.message || 'Đã có lỗi xảy ra trên máy chủ.',
+          message: 'Đã có lỗi xảy ra trên máy chủ.',
         },
       },
       500

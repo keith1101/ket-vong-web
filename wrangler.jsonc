@@ -1,0 +1,46 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "ketvong-api",
+	"main": "apps/api/src/worker.ts",
+	"compatibility_date": "2026-10-10",
+	"build": {
+		"command": "node node_modules/typescript/bin/tsc -p packages/db/tsconfig.json --pretty false",
+		"watch_dir": [
+			"apps/api/src",
+			"packages/db/src"
+		]
+	},
+	"observability": {
+		"enabled": true
+	},
+	"triggers": { "crons": ["*/15 * * * *"] },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ketvong-prod",
+			"database_id": "eb953b47-4af1-4c18-9b64-3037d651d92d",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vars": {
+		"DEPLOYMENT_ENV": "production",
+		"PUBLIC_BASE_URL": "https://ketvong.pages.dev",
+		"PAYOS_RETURN_URL": "https://ketvong.pages.dev/thanh-toan/ket-qua",
+		"PAYOS_CANCEL_URL": "https://ketvong.pages.dev/thanh-toan/da-huy",
+		"BYPASS_PAYMENT": "false",
+		"SEND_CHECKOUT_EMAIL": "false",
+		"PAYOS_BASE_URL": "https://api-merchant.payos.vn"
+	},
+	"secrets": {
+		"required": [
+			"SESSION_SECRET",
+			"PAYOS_CLIENT_ID",
+			"PAYOS_API_KEY",
+			"PAYOS_CHECKSUM_KEY",
+			"GMAIL_CLIENT_ID",
+			"GMAIL_CLIENT_SECRET",
+			"GMAIL_REFRESH_TOKEN",
+			"GMAIL_SENDER_EMAIL"
+		]
+	}
+}

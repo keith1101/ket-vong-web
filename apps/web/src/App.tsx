@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { HomePage } from './pages/HomePage';
-import { TransferPage } from './pages/TransferPage';
+import { LandingPage } from './pages/LandingPage';
+import { DonatePage } from './pages/DonatePage';
+import { AboutPage } from './pages/AboutPage';
+import { PaymentResultPage } from './pages/PaymentResultPage';
 import { TransparencyPage } from './pages/TransparencyPage';
 import { ReceiptPage } from './pages/ReceiptPage';
 import { InfoPage } from './pages/InfoPage';
@@ -64,17 +66,8 @@ export const App: React.FC = () => {
 
   // Route matching
   const renderRoute = () => {
-    // 1. Màn hình chuyển khoản: /chuyen-khoan/:code
-    const transferMatch = currentPath.match(/^\/chuyen-khoan\/([a-zA-Z0-9-_]+)/);
-    if (transferMatch) {
-      return (
-        <TransferPage
-          code={transferMatch[1]}
-          navigate={navigate}
-          state={routeState}
-        />
-      );
-    }
+    if (currentPath === '/thanh-toan/ket-qua') return <PaymentResultPage navigate={navigate} />;
+    if (currentPath === '/thanh-toan/da-huy') return <PaymentResultPage cancelled navigate={navigate} />;
 
     // 2. Màn hình biên nhận: /dong-gop/:code
     const receiptMatch = currentPath.match(/^\/dong-gop\/([a-zA-Z0-9-_]+)/);
@@ -86,8 +79,8 @@ export const App: React.FC = () => {
     if (currentPath === '/minh-bach') {
       return <TransparencyPage />;
     }
-    if (currentPath === '/ung-ho') return <HomePage navigate={navigate} />;
-    if (currentPath === '/gioi-thieu') return <InfoPage kind="about" />;
+    if (currentPath === '/ung-ho') return <DonatePage navigate={navigate} />;
+    if (currentPath === '/gioi-thieu') return <AboutPage navigate={navigate} />;
     if (currentPath === '/lien-he') return <InfoPage kind="contact" />;
     if (currentPath === '/chinh-sach-bao-mat') return <InfoPage kind="privacy" />;
 
@@ -138,8 +131,8 @@ export const App: React.FC = () => {
       );
     }
 
-    // Default: Trang chủ (/)
-    return <HomePage navigate={navigate} />;
+    // Default: Trang chủ (/) - Giới thiệu dự án theo Phần 2
+    return <LandingPage navigate={navigate} />;
   };
 
   const isAdminArea = currentPath.startsWith('/admin') && adminUser;

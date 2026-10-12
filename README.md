@@ -1,6 +1,6 @@
-# WEBSITE KẾT VÒNG (QUYÊN GÓP TỰ ĐỘNG QUA SEPAY)
+# WEBSITE KẾT VÒNG (QUYÊN GÓP TỰ ĐỘNG QUA PAYOS)
 
-Dự án website gây quỹ minh bạch cho workshop Kết Vòng (mục tiêu 2.300.000đ), tự động ghi nhận chuyển khoản ngân hàng thông qua cổng SePay, xuất thư cảm ơn tự động và báo cáo thu/chi minh bạch.
+Dự án website gây quỹ minh bạch cho workshop Kết Vòng (mục tiêu 4.000.000đ), tự động ghi nhận thanh toán qua PayOS, xuất thư cảm ơn tự động và báo cáo thu/chi minh bạch.
 
 ---
 
@@ -24,12 +24,12 @@ cp .env.example .env
 *(Trên Windows PowerShell: `Copy-Item .env.example .env`)*
 
 ### 4. Khởi tạo cơ sở dữ liệu và seed tài khoản Admin
-Chạy migration tạo bảng và seed 3 tài khoản admin ban đầu:
+Chạy migration tạo bảng và seed 1 tài khoản super-admin ban đầu:
 ```bash
 # Chạy migration tạo các bảng SQLite
 pnpm db:migrate
 
-# Seed 3 tài khoản Admin: Huy (super-admin), Trúc (admin), Hưng (admin)
+# Seed 1 tài khoản Admin: Huy (super-admin)
 pnpm seed:admin
 ```
 
@@ -46,25 +46,12 @@ pnpm dev
 
 ---
 
-## 🧪 GIẢ LẬP WEBHOOK SEPAY TRÊN LOCALHOST (`pnpm webhook:simulate`)
+## 🧪 GIẢ LẬP WEBHOOK PAYOS TRÊN LOCALHOST (`pnpm webhook:simulate`)
 
-Để kiểm thử toàn bộ luồng tự động nhận tiền ngân hàng, khớp mã, xử lý ca lệch mà không cần giao dịch ngân hàng thật:
+Để kiểm thử webhook PayOS local mà không cần thanh toán thật:
 
 ```bash
-# 1. Giả lập thanh toán KHỚP CHUẨN (Mã đúng + Tiền đúng -> Tự động duyệt + Gửi mail)
-pnpm webhook:simulate --code KV-A1B2C3 --amount 10000
-
-# 2. Giả lập LỆCH TIỀN (Mã đúng nhưng chuyển sai số tiền -> Vào hàng chờ manual_review)
-pnpm webhook:simulate --code KV-A1B2C3 --amount 20000 --reason amount_mismatch
-
-# 3. Giả lập THIẾU MÃ / SAI MÃ (Nội dung chuyển khoản không có mã -> Vào hàng chờ manual_review)
-pnpm webhook:simulate --amount 50000 --content "Ung ho ket vong em Huy"
-
-# 4. Giả lập CHỮ KÝ HMAC SAI (Hệ thống từ chối HTTP 401)
-pnpm webhook:simulate --code KV-A1B2C3 --amount 10000 --invalid-signature
-
-# 5. Giả lập GỬI TRÙNG GIAO DỊCH (Idempotency - Webhook gửi retry)
-pnpm webhook:simulate --code KV-A1B2C3 --amount 10000 --duplicate
+pnpm webhook:simulate <orderCode> <amount> [reference]
 ```
 
 ---
@@ -94,14 +81,13 @@ Nếu muốn hệ thống gửi mail cảm ơn thực tế tới hòm thư donor
 
 ```text
 ├── apps/
-│   ├── api/             # Backend API Hono, Webhook SePay, Auth, Receipt Engine
+│   ├── api/             # Backend API Hono, Webhook PayOS, Auth, Receipt Engine
 │   └── web/             # Frontend React (Vite + Tailwind CSS + Lucide Icons)
 ├── packages/
 │   └── db/              # Database adapter, SQLite schema, Migrations, Seed
+├── docs/                # Tài liệu dự án (SRS, DECISIONS, Hướng dẫn UAT, Pháp lý)
 ├── .env.example         # File mẫu các biến môi trường
-├── DECISIONS.md         # Nhật ký các quyết định kỹ thuật theo SRS
-├── README.md            # Tài liệu hướng dẫn sử dụng
-└── SRS_KetVong.md       # Đặc tả yêu cầu phần mềm v2.0
+└── README.md            # Tài liệu hướng dẫn sử dụng
 ```
 
 ---

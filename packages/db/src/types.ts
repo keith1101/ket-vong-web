@@ -1,4 +1,4 @@
-export type DonationStatus = 'awaiting_transfer' | 'approved' | 'manual_review' | 'rejected' | 'expired';
+export type DonationStatus = 'pending_payment' | 'approved' | 'manual_review' | 'rejected' | 'expired' | 'cancelled';
 
 export type ReviewReason = 
   | 'amount_mismatch' 
@@ -23,14 +23,22 @@ export interface Donation {
   is_anonymous: number; // 0 or 1
   consent: number; // 0 or 1
   status: DonationStatus;
-  sepay_transaction_id: string | null;
+  payment_provider: string;
+  provider_order_code: number | null;
+  provider_payment_link_id: string | null;
+  provider_reference: string | null;
+  payment_checkout_url: string | null;
+  payment_qr_code: string | null;
+  payment_expires_at: string | null;
+  payment_received_at: string | null;
+  payment_raw_event: string | null;
   receipt_token_hash: string | null;
   review_reason: string | null;
   approved_by: string | null;
   created_at: string;
   transaction_at: string | null;
   approved_at: string | null;
-  raw_transfer_content: string | null;
+  review_notes: string | null;
 }
 
 export type AdminRole = 'super-admin' | 'admin';
@@ -97,6 +105,7 @@ export interface PublicDonationItem {
   display_name: string;
   amount: number;
   approved_at: string;
+  public_message?: string | null;
 }
 
 export interface FundSummary {

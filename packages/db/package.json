@@ -10,6 +10,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./d1": {
+      "types": "./dist/d1-adapter.d.ts",
+      "import": "./dist/d1-adapter.js",
+      "default": "./dist/d1-adapter.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite-adapter.d.ts",
+      "import": "./dist/sqlite-adapter.js",
+      "default": "./dist/sqlite-adapter.js"
     }
   },
   "scripts": {

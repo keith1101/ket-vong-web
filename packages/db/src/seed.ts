@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import { SqliteDatabaseAdapter } from './adapter.js';
+import { SqliteDatabaseAdapter } from './sqlite-adapter.js';
 
 // Load .env
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -45,18 +45,6 @@ export async function seedAdmins() {
       password: requiredEnv('ADMIN_HUY_PASSWORD'),
       role: 'super-admin' as const,
     },
-    {
-      name: 'Nguyễn Thị Trúc',
-      email: requiredEnv('ADMIN_TRUC_EMAIL'),
-      password: requiredEnv('ADMIN_TRUC_PASSWORD'),
-      role: 'admin' as const,
-    },
-    {
-      name: 'Lê Quốc Hưng',
-      email: requiredEnv('ADMIN_HUNG_EMAIL'),
-      password: requiredEnv('ADMIN_HUNG_PASSWORD'),
-      role: 'admin' as const,
-    },
   ];
 
   try {
@@ -84,7 +72,7 @@ export async function seedAdmins() {
       }
     }
 
-    console.log('[DB Seed] Hoàn tất seed 3 tài khoản Admin!');
+    console.log('[DB Seed] Hoàn tất seed 1 tài khoản super-admin!');
   } finally {
     adapter.close();
   }

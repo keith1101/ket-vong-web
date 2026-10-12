@@ -96,4 +96,28 @@ Tài liệu ghi nhận các quyết định kiến trúc và kỹ thuật tuân 
   - Test suites và migration không hardcode credentials thật; mật khẩu seed admin yêu cầu đổi ngay trong lần đăng nhập đầu tiên.
 - **Lý do:** Đáp ứng NFR-05, NFR-06, NFR-07 và quy định pre-push audit nghiêm ngặt.
 
+---
+
+### Quyết định 8: Pháp lý NĐ 93/2021/NĐ-CP & Quản lý Tài khoản Ngân hàng Động
+- **Ngày:** 2026-10-10
+- **Vấn đề:** Tuân thủ Nghị định 93/2021/NĐ-CP Điều 17(2) quy định vận động quyên góp thiện nguyện phải mở tài khoản riêng biệt cho từng cuộc vận động.
+- **Lựa chọn:** 
+  - Tài khoản thụ hưởng thuộc về Thủ quỹ Nguyễn Thị Thanh Trúc.
+  - Tuyệt đối KHÔNG hardcode tài khoản cá nhân Bùi Anh Huy trong code, schema hoặc seed database.
+  - Thông tin ngân hàng (`bank_id`, `bank_account_number`, `bank_account_name`) được lưu trong bảng `settings` và tải động qua API. Mặc định seed: `bank_account_name = 'NGUYEN THI THANH TRUC'`, `bank_account_number = ''` (sẽ được Trúc cập nhật qua trang Quản trị ngay khi mở tài khoản thành công).
+- **Lý do:** Tuân thủ 100% cơ sở pháp lý tại `Legal_KetVong.md`, đảm bảo tính minh bạch và tránh rủi ro pháp lý cho nhóm dự án.
+
+---
+
+### Quyết định 9: Chuẩn hóa UI/UX, Luồng Quyên góp 2 Bước & Copy Chuẩn UAT
+- **Ngày:** 2026-10-10
+- **Vấn đề:** Đáp ứng Gói bàn giao UAT (Phần 1, 2, 3), hoàn thiện giao diện truyền cảm hứng và tinh gọn hành trình người ủng hộ.
+- **Lựa chọn:** 
+  - Trang `/ung-ho` quản lý trọn vẹn luồng 2 bước (Bước 1: Form chọn preset [1] + ô nhập tùy ý + tick cam kết NĐ 13/2023; Bước 2: QR Code VietQR, thông tin chuyển khoản, mã `KV-XXXXXX`, các nút sao chép) và bước 3 chúc mừng realtime mà không tạo thêm route `/chuyen-khoan/:code` thừa.
+  - Polling trạng thái: Sử dụng endpoint an toàn `GET /api/v1/donations/:code/status` (0 PII), lặp mỗi 3s và tự động hủy timer (`clearInterval`) ngay khi trạng thái chuyển sang `approved`/`rejected`/`expired` hoặc khi rời trang (unmount).
+  - Bảng tiến độ quỹ: Ghi rõ nhãn *"so với ngân sách dự kiến (2.300.000đ)"* để người ủng hộ không hiểu lầm chiến dịch đóng theo số tiền (chiến dịch đóng theo mốc thời gian ngày 20/10/2026).
+  - Copywriting: Áp dụng chuẩn 100% nội dung Phần 2 (Bản ngắn trên LandingPage, Bản đầy đủ kèm bảng ngân sách 6 dòng 2.300.000đ và danh sách nhóm Tình trên AboutPage).
+- **Lý do:** Trải nghiệm người dùng mượt mà, chính xác về pháp lý và thống nhất văn phong thiện nguyện của dự án.
+
+
 

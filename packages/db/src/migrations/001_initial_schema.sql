@@ -17,20 +17,29 @@ CREATE TABLE IF NOT EXISTS donations (
     public_message TEXT,
     is_anonymous INTEGER NOT NULL DEFAULT 0,
     consent INTEGER NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'awaiting_transfer',
-    sepay_transaction_id TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending_payment',
+    payment_provider TEXT NOT NULL DEFAULT 'payos',
+    provider_order_code INTEGER UNIQUE,
+    provider_payment_link_id TEXT UNIQUE,
+    provider_reference TEXT UNIQUE,
+    payment_checkout_url TEXT,
+    payment_qr_code TEXT,
+    payment_expires_at TEXT,
+    payment_received_at TEXT,
+    payment_raw_event TEXT,
     receipt_token_hash TEXT,
     review_reason TEXT,
     approved_by TEXT,
     created_at TEXT NOT NULL,
     transaction_at TEXT,
     approved_at TEXT,
-    raw_transfer_content TEXT
+    review_notes TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_donations_code ON donations(code);
 CREATE INDEX IF NOT EXISTS idx_donations_status ON donations(status);
-CREATE INDEX IF NOT EXISTS idx_donations_sepay_tx ON donations(sepay_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_donations_provider_order ON donations(provider_order_code);
+CREATE INDEX IF NOT EXISTS idx_donations_provider_link ON donations(provider_payment_link_id);
 CREATE INDEX IF NOT EXISTS idx_donations_created_at ON donations(created_at);
 
 CREATE TABLE IF NOT EXISTS admins (
@@ -109,4 +118,18 @@ CREATE TABLE IF NOT EXISTS templates (
     content TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS payment_events (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_order_code INTEGER,
+    provider_reference TEXT,
+    payment_link_id TEXT,
+    event_signature TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    UNIQUE(provider, event_signature)
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_events_order ON payment_events(provider, provider_order_code);
 

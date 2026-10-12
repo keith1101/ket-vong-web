@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import bcrypt from 'bcryptjs';
-import { SqliteDatabaseAdapter } from '../adapter.js';
+import { SqliteDatabaseAdapter } from '../sqlite-adapter.js';
 
 test('DatabaseAdapter: SQLite in-memory operations', async () => {
   const adapter = new SqliteDatabaseAdapter(':memory:');
@@ -50,38 +50,42 @@ test('DatabaseAdapter: SQLite in-memory operations', async () => {
   assert.equal(item3, null);
 });
 
-test('SRS-004 & SRS-011: Unique constraints on code and sepay_transaction_id', async () => {
+test('Payment idempotency: unique code and PayOS provider reference', async () => {
   const adapter = new SqliteDatabaseAdapter(':memory:');
 
   await adapter.execute(`
     CREATE TABLE donations (
       id TEXT PRIMARY KEY,
       code TEXT UNIQUE NOT NULL,
-      sepay_transaction_id TEXT UNIQUE
+      provider_order_code INTEGER UNIQUE,
+      provider_reference TEXT UNIQUE
     );
   `);
 
-  await adapter.execute('INSERT INTO donations (id, code, sepay_transaction_id) VALUES (?, ?, ?)', [
+  await adapter.execute('INSERT INTO donations (id, code, provider_order_code, provider_reference) VALUES (?, ?, ?, ?)', [
     'd1',
     'KV-TEST01',
-    'TX-1001',
+    1001,
+    'REF-1001',
   ]);
 
   // Duplicate code must fail
   await assert.rejects(async () => {
-    await adapter.execute('INSERT INTO donations (id, code, sepay_transaction_id) VALUES (?, ?, ?)', [
+    await adapter.execute('INSERT INTO donations (id, code, provider_order_code, provider_reference) VALUES (?, ?, ?, ?)', [
       'd2',
       'KV-TEST01',
-      'TX-1002',
+      1002,
+      'REF-1002',
     ]);
   });
 
-  // Duplicate sepay_transaction_id must fail (Idempotency - SRS-011)
+  // Duplicate PayOS provider reference must fail (idempotency)
   await assert.rejects(async () => {
-    await adapter.execute('INSERT INTO donations (id, code, sepay_transaction_id) VALUES (?, ?, ?)', [
+    await adapter.execute('INSERT INTO donations (id, code, provider_order_code, provider_reference) VALUES (?, ?, ?, ?)', [
       'd3',
       'KV-TEST02',
-      'TX-1001',
+      1003,
+      'REF-1001',
     ]);
   });
 });

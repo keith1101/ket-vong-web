@@ -45,10 +45,10 @@ Tài liệu này ghi lại các mục SRS/REQ/AC còn đạt một phần sau đ
 - **Kế hoạch:** Thêm checklist/xác nhận trong admin, lưu audit metadata tối thiểu không chứa PII, kiểm tra email yêu cầu với bản ghi donor và viết E2E test; độ phức tạp trung bình.
 
 ### SRS-080
-- **Hiện trạng:** Request handler dùng `DatabaseAdapter`; localhost có adapter SQLite và `pnpm build` chạy được.
-- **Còn thiếu:** Adapter hiện vẫn phụ thuộc `node:sqlite`, chưa có D1 adapter và chưa hoàn tất dependency injection/migration path cho Cloudflare Workers.
+- **Hiện trạng:** Request handler dùng `DatabaseAdapter`; localhost vẫn dùng SQLite. Đã thêm `D1DatabaseAdapter`, Worker entrypoint, D1 migration và nhánh webhook dùng `D1.batch()`.
+- **Còn thiếu:** Chưa tạo/apply database D1 remote, chưa kiểm thử staging trên Workers với secret/domain thật và chưa hoàn tất race test webhook trên D1.
 - **Mức độ:** TECH DEBT (để sau được)
-- **Kế hoạch:** Khi quyết định migrate Cloudflare, triển khai `D1DatabaseAdapter`, tách transaction/SQL khác biệt theo adapter, chạy compatibility test trên D1; độ phức tạp cao. Theo quyết định localhost-first, chưa cần làm trước bàn giao hiện tại.
+- **Kế hoạch:** Tạo D1, apply migration, deploy Worker staging, kiểm thử PayOS/Gmail thật và đo race/idempotency trước khi chuyển production; độ phức tạp cao.
 
 ### REQ-12
 - **Hiện trạng:** Checkbox consent đã có trong form, mặc định **không tick**, là bắt buộc trước khi gửi; trang `/chinh-sach-bao-mat` đã có route, link từ form/footer và nội dung đọc từ settings. Backend cũng từ chối submit thiếu consent.
@@ -82,9 +82,9 @@ Tài liệu này ghi lại các mục SRS/REQ/AC còn đạt một phần sau đ
 
 ### AC-07
 - **Hiện trạng:** `pnpm build` pass và request handler đã phụ thuộc interface adapter thay vì gọi trực tiếp DB trong route.
-- **Còn thiếu:** Chưa thể xác nhận build/deploy trên Cloudflare Workers + D1 vì chưa có D1 adapter.
+- **Còn thiếu:** Chưa thể xác nhận deploy thực tế trên Cloudflare Workers + D1 vì chưa có database ID, secret/domain và staging run.
 - **Mức độ:** TECH DEBT (để sau được)
-- **Kế hoạch:** Thực hiện cùng lộ trình SRS-080 khi có quyết định migrate Cloudflare; độ phức tạp cao.
+- **Kế hoạch:** Chạy checklist trong `docs/CLOUDFLARE_MIGRATION.md` trên staging rồi ghi bằng chứng deploy/test; độ phức tạp cao.
 
 ### NFR-01–03
 - **Hiện trạng:** Có script mô phỏng webhook và build/test tự động; các ngưỡng hiệu năng đã được ghi trong SRS.

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { getDb } from '../db.js';
 import { adminLoginLimiter } from '../utils/rate-limiter.js';
+import { hashSha256, signHmacSha256 } from '../utils/hmac.js';
 import { config } from '../config.js';
 import type { DatabaseAdapter, Admin, AdminRole } from '@ketvong/db';
 
@@ -11,10 +12,19 @@ export interface AdminSession {
   role: AdminRole;
   mustChangePassword: boolean;
   expiresAt: number;
+  csrfToken: string;
 }
 
-// Map lưu active sessions (hoặc mã hóa HMAC cookie)
-const activeSessions = new Map<string, AdminSession>();
+interface AdminSessionRow {
+  token_hash: string;
+  admin_id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+  must_change_password: number;
+  expires_at: number;
+  created_at: string;
+}
 
 export async function loginAdmin(
   email: string,
@@ -54,33 +64,60 @@ export async function loginAdmin(
   const sessionToken = crypto.randomUUID();
   const expiresAt = Date.now() + 12 * 60 * 60 * 1000;
 
-  activeSessions.set(sessionToken, {
-    adminId: admin.id,
-    email: admin.email,
-    name: admin.name,
-    role: admin.role,
-    mustChangePassword: admin.must_change_password === 1,
-    expiresAt,
-  });
+  await database.execute(
+    `INSERT INTO admin_sessions
+      (token_hash, admin_id, email, name, role, must_change_password, expires_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      await hashSha256(sessionToken),
+      admin.id,
+      admin.email,
+      admin.name,
+      admin.role,
+      admin.must_change_password,
+      expiresAt,
+      new Date().toISOString(),
+    ]
+  );
 
   const { password_hash, ...safeAdmin } = admin;
   return { sessionToken, admin: safeAdmin };
 }
 
-export function getSession(sessionToken: string | null | undefined): AdminSession | null {
+export async function getSession(
+  sessionToken: string | null | undefined,
+  db?: DatabaseAdapter
+): Promise<AdminSession | null> {
   if (!sessionToken) return null;
-  const session = activeSessions.get(sessionToken);
+  const database = db || getDb();
+  const session = await database.queryOne<AdminSessionRow>(
+    `SELECT s.token_hash, s.admin_id, a.email, a.name, a.role, a.must_change_password, s.expires_at, s.created_at
+     FROM admin_sessions s
+     JOIN admins a ON a.id = s.admin_id
+     WHERE s.token_hash = ?`,
+    [await hashSha256(sessionToken)]
+  );
   if (!session) return null;
 
-  if (Date.now() > session.expiresAt) {
-    activeSessions.delete(sessionToken);
+  if (Date.now() > Number(session.expires_at)) {
+    await database.execute('DELETE FROM admin_sessions WHERE token_hash = ?', [session.token_hash]);
     return null;
   }
-  return session;
+
+  return {
+    adminId: session.admin_id,
+    email: session.email,
+    name: session.name,
+    role: session.role,
+    mustChangePassword: session.must_change_password === 1,
+    expiresAt: Number(session.expires_at),
+    csrfToken: await signHmacSha256(`${session.token_hash}:${session.expires_at}`, config.sessionSecret || 'local-development-session-secret'),
+  };
 }
 
-export function logoutAdmin(sessionToken: string): void {
-  activeSessions.delete(sessionToken);
+export async function logoutAdmin(sessionToken: string, db?: DatabaseAdapter): Promise<void> {
+  const database = db || getDb();
+  await database.execute('DELETE FROM admin_sessions WHERE token_hash = ?', [await hashSha256(sessionToken)]);
 }
 
 export async function changeAdminPassword(
@@ -99,6 +136,8 @@ export async function changeAdminPassword(
     'UPDATE admins SET password_hash = ?, must_change_password = 0 WHERE id = ?',
     [hash, adminId]
   );
+  // Đổi mật khẩu phải vô hiệu hóa toàn bộ phiên cũ, kể cả phiên hiện tại.
+  await database.execute('DELETE FROM admin_sessions WHERE admin_id = ?', [adminId]);
 }
 
 export async function recordAuditLog(

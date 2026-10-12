@@ -2,6 +2,11 @@
 node_modules/
 .pnpm-store/
 
+# Local agent/tool files
+.agents/
+.codex/
+.claude/
+
 # Production builds
 dist/
 build/
@@ -55,3 +60,24 @@ coverage/
 .cache/
 .temp/
 tmp/
+.vite/
+.vercel/
+.wrangler/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+
+# Secrets and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+
+design-system/
+resources/
+!migrations/
+!migrations/*.sql
+!packages/db/src/migrations/
+!packages/db/src/migrations/*.sql

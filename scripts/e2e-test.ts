@@ -1,162 +1,79 @@
 import { createApp } from '../apps/api/src/app.js';
+import { setDbForTesting } from '../apps/api/src/db.js';
 import { signHmacSha256 } from '../apps/api/src/utils/hmac.js';
 import { config } from '../apps/api/src/config.js';
+import { createInMemoryDbAdapter } from '../packages/db/src/adapter.js';
 
 async function runE2ETest() {
-  console.log('\n======================================================');
-  console.log('🚀 BẮT ĐẦU E2E VERIFICATION TEST SUITE (HONO APP & API)');
-  console.log('======================================================\n');
+  const db = createInMemoryDbAdapter();
+  await db.exec(`
+    CREATE TABLE donations (
+      id TEXT PRIMARY KEY, code TEXT UNIQUE NOT NULL, expected_amount INTEGER NOT NULL, actual_amount INTEGER,
+      quantity INTEGER NOT NULL DEFAULT 1, unit_price INTEGER NOT NULL DEFAULT 10000, display_name TEXT NOT NULL,
+      title TEXT NOT NULL, email TEXT NOT NULL, phone TEXT, public_message TEXT, is_anonymous INTEGER NOT NULL DEFAULT 0,
+      consent INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL DEFAULT 'pending_payment', payment_provider TEXT NOT NULL DEFAULT 'payos',
+      provider_order_code INTEGER UNIQUE, provider_payment_link_id TEXT UNIQUE, provider_reference TEXT UNIQUE,
+      payment_checkout_url TEXT, payment_qr_code TEXT, payment_expires_at TEXT, payment_received_at TEXT,
+      payment_raw_event TEXT, receipt_token_hash TEXT, public_status_token_hash TEXT, review_reason TEXT, approved_by TEXT, created_at TEXT NOT NULL,
+      transaction_at TEXT, approved_at TEXT, review_notes TEXT
+    );
+    CREATE TABLE payment_events (
+      id TEXT PRIMARY KEY, provider TEXT NOT NULL, provider_order_code INTEGER, provider_reference TEXT,
+      payment_link_id TEXT, event_signature TEXT NOT NULL UNIQUE, payload TEXT NOT NULL, received_at TEXT NOT NULL
+    );
+    CREATE TABLE email_logs (id TEXT PRIMARY KEY, donation_id TEXT NOT NULL, recipient_email TEXT NOT NULL, subject TEXT NOT NULL, status TEXT NOT NULL, error_message TEXT, message_id TEXT, sent_at TEXT NOT NULL);
+    CREATE TABLE templates (key TEXT PRIMARY KEY, subject TEXT, content TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
+    CREATE TABLE daily_reports (id TEXT PRIMARY KEY, total_expense INTEGER NOT NULL DEFAULT 0);
+    INSERT INTO settings (key, value, updated_at) VALUES ('unit_price', '10000', '2026-10-10');
+    INSERT INTO settings (key, value, updated_at) VALUES ('max_quantity', '1000', '2026-10-10');
+    INSERT INTO settings (key, value, updated_at) VALUES ('presets', '[1]', '2026-10-10');
+    INSERT INTO templates (key, subject, content, updated_at) VALUES ('email_thank_you', 'Cảm ơn {{name}}', 'Cảm ơn {{name}} {{amount}} {{code}} {{receipt_url}}', '2026-10-10');
+  `);
+  setDbForTesting(db);
+  config.payos.clientId = 'test-client';
+  config.payos.apiKey = 'test-api';
+  config.payos.checksumKey = 'test-checksum';
+  config.bypassPayment = false;
 
-  const app = createApp();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    if (String(input).includes('/v2/payment-requests')) {
+      return new Response(JSON.stringify({ code: '00', data: { orderCode: 202610100001, paymentLinkId: 'plink-1', checkoutUrl: 'https://pay.payos.vn/web/plink-1', qrCode: 'qr', status: 'PENDING' } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return originalFetch(input);
+  }) as typeof fetch;
 
-  // -------------------------------------------------------------------------
-  // BƯỚC 1: Tạo Donation Intent (SRS-001, SRS-002, AC-01)
-  // -------------------------------------------------------------------------
-  console.log('[1/7] Kiểm tra cấp mã ủng hộ (POST /api/v1/donations)...');
-  const createRes = await app.request('/api/v1/donations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      quantity: 2,
-      displayName: 'Trần Minh Anh',
-      title: 'Chị',
-      email: 'minhanh@gmail.com',
-      phone: '0912345678',
-      publicMessage: 'Chúc các em nhỏ workshop vui vẻ!',
-      isAnonymous: false,
-      consent: true,
-    }),
-  });
+  try {
+    const app = createApp();
+    const createRes = await app.request('/api/v1/donations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 2, displayName: 'Trần Minh Anh', title: 'Chị', email: 'minhanh@gmail.com', consent: true }),
+    });
+    if (!createRes.ok) throw new Error(await createRes.text());
+    const created = (await createRes.json() as any).data;
+    if (created.donation.expected_amount !== 20000 || !created.payment.checkoutUrl) throw new Error('PayOS payment link không hợp lệ.');
 
-  if (!createRes.ok) throw new Error(`Lỗi tạo donation: ${await createRes.text()}`);
-  const createData = (await createRes.json() as any).data;
-  const donationCode = createData.donation.code;
-  const expectedAmount = createData.donation.expected_amount;
+    const data = { orderCode: 202610100001, amount: 20000, description: created.donation.code, reference: 'REF-E2E', transactionDateTime: new Date().toISOString(), paymentLinkId: 'plink-1' };
+    const canonical = Object.keys(data).sort().map((key) => `${key}=${(data as any)[key]}`).join('&');
+    const payload = { code: '00', desc: 'success', success: true, data, signature: await signHmacSha256(canonical, config.payos.checksumKey) };
+    const body = JSON.stringify(payload);
 
-  console.log(`✅ Cấp mã thành công: ${donationCode} - Số tiền: ${expectedAmount}đ`);
-  if (expectedAmount !== 20000) throw new Error(`Số tiền tính sai: ${expectedAmount}`);
+    const bad = await app.request('/api/v1/webhooks/payos', { method: 'POST', body: JSON.stringify({ ...payload, signature: 'bad' }) });
+    if (bad.status !== 401) throw new Error(`Sai signature không bị từ chối: ${bad.status}`);
+    const paid = await app.request('/api/v1/webhooks/payos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if (!paid.ok || (await paid.json() as any).action !== 'approved') throw new Error('Webhook PayOS hợp lệ không approve.');
+    const retry = await app.request('/api/v1/webhooks/payos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    if ((await retry.json() as any).action !== 'idempotent_skip') throw new Error('Webhook PayOS trùng không được bỏ qua.');
 
-  // -------------------------------------------------------------------------
-  // BƯỚC 2: Kiểm tra bảo mật PII trên Public API (SRS-030, NFR-05, AC-03)
-  // -------------------------------------------------------------------------
-  console.log('\n[2/7] Kiểm tra không rò rỉ PII trên API public (GET /api/v1/donations/public)...');
-  const publicRes = await app.request('/api/v1/donations/public');
-  const publicRaw = await publicRes.text();
-  if (publicRaw.includes('minhanh@gmail.com') || publicRaw.includes('0912345678')) {
-    throw new Error('❌ NFR-05 VIOLATION: Phát hiện email hoặc SĐT trong public response!');
+    const publicResponse = await app.request('/api/v1/donations/public');
+    if ((await publicResponse.text()).includes('minhanh@gmail.com')) throw new Error('Public API làm lộ email.');
+    const unauth = await app.request('/api/v1/admin/donations');
+    if (unauth.status !== 401) throw new Error('Admin route không chặn unauthenticated request.');
+    console.log('[E2E] PayOS hosted checkout, webhook signature, idempotency, PII và admin auth: PASS');
+  } finally {
+    globalThis.fetch = originalFetch;
   }
-  console.log('✅ Bảo mật PII đạt chuẩn: 0 trường SĐT/Email trong API public.');
-
-  // -------------------------------------------------------------------------
-  // BƯỚC 3: Giả lập Webhook Chữ Ký Sai -> 401 (SRS-010)
-  // -------------------------------------------------------------------------
-  console.log('\n[3/7] Kiểm tra chữ ký HMAC sai -> 401 (POST /api/v1/webhooks/sepay)...');
-  const badBody = JSON.stringify({ id: `TX-BAD-${Date.now()}`, transferAmount: 20000, content: `Ung ho ${donationCode}` });
-  const badSigRes = await app.request('/api/v1/webhooks/sepay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Sepay-Signature': 'fake_signature' },
-    body: badBody,
-  });
-  if (badSigRes.status !== 401) throw new Error(`Kỳ vọng 401 nhưng nhận ${badSigRes.status}`);
-  console.log('✅ Chữ ký sai bị từ chối chính xác với HTTP 401.');
-
-  // -------------------------------------------------------------------------
-  // BƯỚC 4: Webhook Khớp Chuẩn (SRS-012, AC-02 - Happy Path)
-  // -------------------------------------------------------------------------
-  console.log('\n[4/7] Kiểm tra webhook khớp chuẩn (Mã đúng + Tiền đúng)...');
-  const txId = `TX-${Date.now()}`;
-  const goodPayload = {
-    id: txId,
-    transferAmount: expectedAmount,
-    content: `CK UNG HO KET VONG ${donationCode}`,
-    transactionDate: new Date().toISOString(),
-  };
-  const goodBody = JSON.stringify(goodPayload);
-  const goodSig = await signHmacSha256(goodBody, config.sepayWebhookSecret);
-
-  const goodRes = await app.request('/api/v1/webhooks/sepay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Sepay-Signature': goodSig },
-    body: goodBody,
-  });
-  if (!goodRes.ok) throw new Error(`Lỗi webhook: ${await goodRes.text()}`);
-  const goodJson = await goodRes.json() as any;
-  if (goodJson.action !== 'approved') throw new Error(`Kỳ vọng approved nhưng nhận: ${goodJson.action}`);
-  console.log('✅ Webhook khớp thành công -> Trạng thái: approved + kích hoạt gửi mail.');
-
-  // -------------------------------------------------------------------------
-  // BƯỚC 5: Chống Ghi Trùng / Idempotency (SRS-011, NFR-04)
-  // -------------------------------------------------------------------------
-  console.log('\n[5/7] Kiểm tra chống ghi trùng khi SePay retry (Idempotency)...');
-  const retryRes = await app.request('/api/v1/webhooks/sepay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Sepay-Signature': goodSig },
-    body: goodBody,
-  });
-  const retryJson = await retryRes.json() as any;
-  if (retryJson.action !== 'idempotent_skip') throw new Error(`Kỳ vọng idempotent_skip nhưng nhận: ${retryJson.action}`);
-  console.log('✅ Gửi lại giao dịch cũ -> Bỏ qua an toàn (idempotent_skip).');
-
-  // -------------------------------------------------------------------------
-  // BƯỚC 6: Webhook Lệch Tiền -> manual_review (SRS-012, AC-02)
-  // -------------------------------------------------------------------------
-  console.log('\n[6/7] Kiểm tra webhook lệch tiền -> manual_review...');
-  const create2 = await app.request('/api/v1/donations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      quantity: 1,
-      displayName: 'Lê Văn B',
-      title: 'Anh',
-      email: 'b@gmail.com',
-      consent: true,
-    }),
-  });
-  const code2 = (await create2.json() as any).data.donation.code;
-
-  // Chuyển thiếu tiền (10.000đ nhưng chuyển 5.000đ)
-  const mismatchPayload = {
-    id: `TX-MIS-${Date.now()}`,
-    transferAmount: 5000,
-    content: `Ung ho ${code2}`,
-    transactionDate: new Date().toISOString(),
-  };
-  const mismatchBody = JSON.stringify(mismatchPayload);
-  const mismatchSig = await signHmacSha256(mismatchBody, config.sepayWebhookSecret);
-
-  const mismatchRes = await app.request('/api/v1/webhooks/sepay', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Sepay-Signature': mismatchSig },
-    body: mismatchBody,
-  });
-  const mismatchJson = await mismatchRes.json() as any;
-  if (mismatchJson.action !== 'manual_review' || mismatchJson.reason !== 'amount_mismatch') {
-    throw new Error(`Kỳ vọng manual_review / amount_mismatch nhưng nhận: ${JSON.stringify(mismatchJson)}`);
-  }
-  console.log('✅ Chuyển sai số tiền -> Vào hàng chờ manual_review chính xác.');
-
-  // -------------------------------------------------------------------------
-  // BƯỚC 7: Chỉ số quỹ Realtime (SRS-031)
-  // -------------------------------------------------------------------------
-  console.log('\n[7/7] Kiểm tra 4 chỉ số quỹ realtime (GET /api/v1/fund/summary)...');
-  const fundRes = await app.request('/api/v1/fund/summary');
-  const fundJson = (await fundRes.json() as any).data;
-  console.log(`Chỉ số quỹ: Đã nhận: ${fundJson.total_received}đ | Số lượt: ${fundJson.donation_count} | Số dư: ${fundJson.balance}đ`);
-  if (fundJson.total_received <= 0 || fundJson.donation_count <= 0) {
-    throw new Error('Số liệu quỹ chưa được cập nhật chính xác.');
-  }
-  console.log('✅ Tính toán chỉ số quỹ realtime hoạt động chuẩn xác.');
-
-  console.log('\n======================================================');
-  console.log('🎉 TẤT CẢ 7 BƯỚC E2E VERIFICATION ĐỀU PASS 100%!');
-  console.log('======================================================\n');
 }
 
-runE2ETest()
-  .then(() => {
-    console.log('[E2E] Hoàn tất toàn bộ kịch bản test thành công.');
-  })
-  .catch((err) => {
-    console.error('❌ E2E Test Thất bại:', err);
-    process.exit(1);
-  });
+runE2ETest().catch((error) => { console.error('[E2E] FAIL:', error); process.exit(1); });

@@ -22,6 +22,7 @@ export interface PublicDonationItem {
   display_name: string;
   amount: number;
   approved_at: string;
+  public_message?: string | null;
 }
 
 export interface Donation {
@@ -38,14 +39,22 @@ export interface Donation {
   public_message: string | null;
   is_anonymous: number;
   consent: number;
-  status: 'awaiting_transfer' | 'approved' | 'manual_review' | 'rejected' | 'expired';
-  sepay_transaction_id: string | null;
+  status: 'pending_payment' | 'approved' | 'manual_review' | 'rejected' | 'expired' | 'cancelled';
+  payment_provider: string;
+  provider_order_code: number | null;
+  provider_payment_link_id: string | null;
+  provider_reference: string | null;
+  payment_checkout_url: string | null;
+  payment_qr_code: string | null;
+  payment_expires_at: string | null;
+  payment_received_at: string | null;
+  payment_raw_event: string | null;
   receipt_token_hash: string | null;
   review_reason: string | null;
   approved_by: string | null;
   created_at: string;
   approved_at: string | null;
-  raw_transfer_content: string | null;
+  review_notes: string | null;
 }
 
 export interface DailyReport {

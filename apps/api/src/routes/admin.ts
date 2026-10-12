@@ -11,10 +11,11 @@ import {
 } from '../services/auth-service.js';
 import { sendThankYouEmail } from '../services/email-service.js';
 import { createDonationIntent } from '../services/donation-service.js';
-import { getMonthlySepayCount } from '../services/webhook-service.js';
 import { generateReceiptToken, hashSha256 } from '../utils/hmac.js';
+import { config } from '../config.js';
 import type { Donation, DailyReport, Template } from '@ketvong/db';
 import type { Context } from 'hono';
+import { getTrustedClientIp, isAllowedMutationOrigin, readJsonBody } from '../utils/request-security.js';
 
 type AdminEnv = {
   Variables: {
@@ -22,12 +23,27 @@ type AdminEnv = {
   };
 };
 
+function validateInvoiceImages(value: unknown): string[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value) || value.length > 20) throw new Error('Danh sách ảnh hóa đơn không hợp lệ.');
+  return value.map((item) => {
+    if (typeof item !== 'string' || item.length > 2048) throw new Error('Đường dẫn ảnh hóa đơn không hợp lệ.');
+    let url: URL;
+    try { url = new URL(item); } catch { throw new Error('Đường dẫn ảnh hóa đơn không hợp lệ.'); }
+    if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Ảnh hóa đơn phải dùng đường dẫn HTTPS an toàn.');
+    if (config.invoiceImageAllowedHosts.length > 0 && !config.invoiceImageAllowedHosts.includes(url.hostname.toLowerCase())) {
+      throw new Error('Ảnh hóa đơn phải đến từ nguồn đã được cho phép.');
+    }
+    return url.toString();
+  });
+}
+
 export const adminRoutes = new Hono<AdminEnv>();
 
 // Middleware xác thực Admin Session (SRS-060, SRS-061)
 async function requireAuth(c: Context<AdminEnv>, next: () => Promise<void>) {
   const token = getCookie(c, 'admin_session') || c.req.header('x-admin-token');
-  const session = getSession(token);
+  const session = await getSession(token);
 
   if (!session) {
     return c.json(
@@ -42,7 +58,12 @@ async function requireAuth(c: Context<AdminEnv>, next: () => Promise<void>) {
   }
 
   c.set('admin', session);
-  if (session.mustChangePassword && !c.req.path.endsWith('/change-password')) {
+  if (c.req.method !== 'GET' && c.req.method !== 'HEAD' && c.req.method !== 'OPTIONS') {
+    if (!isAllowedMutationOrigin(c) || c.req.header('x-csrf-token') !== session.csrfToken) {
+      return c.json({ error: { code: 'CSRF_FAILED', message: 'Yêu cầu quản trị không hợp lệ. Vui lòng tải lại trang và thử lại.' } }, 403);
+    }
+  }
+  if (session.mustChangePassword && !c.req.path.endsWith('/change-password') && !c.req.path.endsWith('/logout')) {
     return c.json({ error: { code: 'PASSWORD_CHANGE_REQUIRED', message: 'Vui lòng đổi mật khẩu trước khi sử dụng khu vực quản trị.' } }, 403);
   }
   await next();
@@ -72,11 +93,11 @@ async function requireSuperAdmin(c: Context<AdminEnv>, next: () => Promise<void>
 // POST /api/v1/admin/login
 adminRoutes.post('/login', async (c) => {
   try {
-    const clientIp = c.req.header('x-forwarded-for') || '127.0.0.1';
-    const body = await c.req.json();
+    const clientIp = getTrustedClientIp(c);
+    const body = await readJsonBody<{ email?: unknown; password?: unknown }>(c, 16 * 1024);
     const { email, password } = body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
       return c.json(
         {
           error: {
@@ -89,12 +110,18 @@ adminRoutes.post('/login', async (c) => {
     }
 
     const { sessionToken, admin } = await loginAdmin(email, password, clientIp);
+    const session = await getSession(sessionToken);
 
-    // Lưu session cookie: 12 giờ, httpOnly, SameSite=Lax (SRS-060)
+    // Pages và Worker staging khác domain nên cookie cross-site cần SameSite=None.
+    // Local/same-origin vẫn giữ SameSite=Lax theo SRS-060.
+    const requestOrigin = c.req.header('origin');
+    const apiOrigin = new URL(c.req.url).origin;
+    const isCrossOrigin = Boolean(requestOrigin && requestOrigin !== apiOrigin);
+
     setCookie(c, 'admin_session', sessionToken, {
       httpOnly: true,
       secure: c.req.url.startsWith('https:'),
-      sameSite: 'Lax',
+      sameSite: isCrossOrigin ? 'None' : 'Lax',
       maxAge: 12 * 60 * 60,
       path: '/',
     });
@@ -103,6 +130,7 @@ adminRoutes.post('/login', async (c) => {
       success: true,
       data: {
         admin,
+        csrfToken: session?.csrfToken,
       },
     });
   } catch (error: any) {
@@ -117,17 +145,15 @@ adminRoutes.post('/login', async (c) => {
     );
   }
 });
-
 // POST /api/v1/admin/logout
-adminRoutes.post('/logout', async (c) => {
-  const token = getCookie(c, 'admin_session');
+adminRoutes.post('/logout', requireAuth, async (c) => {
+  const token = getCookie(c, 'admin_session') || c.req.header('x-admin-token');
   if (token) {
-    logoutAdmin(token);
+    await logoutAdmin(token);
   }
   deleteCookie(c, 'admin_session', { path: '/' });
   return c.json({ success: true });
 });
-
 // GET /api/v1/admin/me
 adminRoutes.get('/me', requireAuth, async (c) => {
   const admin = c.get('admin') as AdminSession;
@@ -157,7 +183,7 @@ adminRoutes.post('/change-password', requireAuth, async (c) => {
 // GET /api/v1/admin/donations
 adminRoutes.get('/donations', requireAuth, async (c) => {
   const db = getDb();
-  const status = c.req.query('status'); // awaiting_transfer, approved, manual_review, rejected, expired
+  const status = c.req.query('status'); // pending_payment, approved, manual_review, rejected, expired, cancelled
   const search = c.req.query('search');
   const page = parseInt(c.req.query('page') || '1', 10);
   const limit = parseInt(c.req.query('limit') || '20', 10);
@@ -167,14 +193,20 @@ adminRoutes.get('/donations', requireAuth, async (c) => {
   let params: any[] = [];
 
   if (status) {
-    whereClauses.push('status = ?');
-    params.push(status);
+    const statuses = status.split(',').map((value) => value.trim()).filter(Boolean);
+    if (statuses.length === 1) {
+      whereClauses.push('status = ?');
+      params.push(statuses[0]);
+    } else if (statuses.length > 1) {
+      whereClauses.push(`status IN (${statuses.map(() => '?').join(', ')})`);
+      params.push(...statuses);
+    }
   }
 
   if (search) {
-    whereClauses.push('(code LIKE ? OR display_name LIKE ? OR email LIKE ? OR raw_transfer_content LIKE ?)');
+    whereClauses.push('(code LIKE ? OR display_name LIKE ? OR email LIKE ? OR provider_reference LIKE ? OR payment_raw_event LIKE ?)');
     const term = `%${search}%`;
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term);
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -217,12 +249,12 @@ adminRoutes.post('/donations', requireAuth, async (c) => {
       quantity: Number(body.quantity),
       displayName: body.displayName,
       title: body.title || 'Bạn',
-      email: body.email,
+      email: body.email?.trim() ? body.email.trim().toLowerCase() : '',
       phone: body.phone,
       publicMessage: body.publicMessage,
       isAnonymous: Boolean(body.isAnonymous),
       consent: true,
-    }, db);
+    }, db, { createPayment: false });
     const receiptToken = generateReceiptToken();
     const now = new Date().toISOString();
     await db.execute(
@@ -230,11 +262,13 @@ adminRoutes.post('/donations', requireAuth, async (c) => {
       [created.donation.expected_amount, await hashSha256(receiptToken), now, admin.adminId, created.donation.id]
     );
     await recordAuditLog(admin.adminId, admin.name, 'CREATE_MANUAL_DONATION', `donation:${created.donation.code}`, `Tạo và duyệt khoản ủng hộ nhập tay`);
-    await sendThankYouEmail({
-      donationId: created.donation.id, code: created.donation.code, email: body.email,
-      title: body.title || 'Bạn', name: body.displayName, amount: created.donation.expected_amount,
-      quantity: created.donation.quantity, receiptToken,
-    }, db);
+    if (body.email?.trim()) {
+      await sendThankYouEmail({
+        donationId: created.donation.id, code: created.donation.code, email: body.email.trim(),
+        title: body.title || 'Bạn', name: body.displayName, amount: created.donation.expected_amount,
+        quantity: created.donation.quantity, receiptToken,
+      }, db).catch(() => undefined);
+    }
     return c.json({ success: true, data: { code: created.donation.code }, message: 'Đã tạo và duyệt khoản ủng hộ nhập tay.' });
   } catch (error: any) {
     return c.json({ error: { code: 'BAD_REQUEST', message: error.message || 'Không thể tạo khoản ủng hộ nhập tay.' } }, 400);
@@ -251,6 +285,12 @@ adminRoutes.post('/donations/:id/approve', requireAuth, async (c) => {
   const donation = await db.queryOne<Donation>('SELECT * FROM donations WHERE id = ?', [id]);
   if (!donation) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy bản ghi quyên góp.' } }, 404);
+  }
+  if (donation.status !== 'manual_review') {
+    return c.json(
+      { error: { code: 'PAYMENT_NOT_REVIEWABLE', message: 'Chỉ có thể duyệt giao dịch đã thanh toán và đang chờ đối chiếu. Khoản chưa chuyển không thể duyệt.' } },
+      409
+    );
   }
 
   const now = new Date().toISOString();
@@ -282,7 +322,7 @@ adminRoutes.post('/donations/:id/approve', requireAuth, async (c) => {
 
   // Gửi mail cảm ơn (SRS-050)
   if (donation.email) {
-    sendThankYouEmail(
+    await sendThankYouEmail(
       {
         donationId: donation.id,
         code: donation.code,
@@ -294,7 +334,7 @@ adminRoutes.post('/donations/:id/approve', requireAuth, async (c) => {
         receiptToken,
       },
       db
-    ).catch(console.error);
+    );
   }
 
   return c.json({ success: true, message: `Đã duyệt thành công mã ${donation.code}` });
@@ -361,19 +401,19 @@ adminRoutes.post('/donations/:id/assign', requireAuth, async (c) => {
     `UPDATE donations SET
       status = 'approved',
       actual_amount = ?,
-      sepay_transaction_id = ?,
+      provider_reference = ?,
       receipt_token_hash = ?,
       approved_at = ?,
       approved_by = ?,
-      raw_transfer_content = ?
+      payment_raw_event = ?
      WHERE id = ?`,
     [
       sourceDonation.actual_amount || sourceDonation.expected_amount,
-      sourceDonation.sepay_transaction_id,
+      sourceDonation.provider_reference,
       tokenHash,
       now,
       admin.adminId,
-      sourceDonation.raw_transfer_content,
+      sourceDonation.payment_raw_event,
       targetDonation.id,
     ]
   );
@@ -381,18 +421,18 @@ adminRoutes.post('/donations/:id/assign', requireAuth, async (c) => {
   // Xóa hoặc đánh dấu bản ghi nguồn đã gán
   // Cột giao dịch là UNIQUE: chuyển quyền sở hữu giao dịch sang bản ghi đích
   // trước khi đánh dấu bản ghi hàng chờ đã được gán.
-  await db.execute("UPDATE donations SET status = 'rejected', review_reason = 'assigned_to_other', sepay_transaction_id = NULL WHERE id = ?", [id]);
+  await db.execute("UPDATE donations SET status = 'rejected', review_reason = 'assigned_to_other', provider_reference = NULL WHERE id = ?", [id]);
 
   await recordAuditLog(
     admin.adminId,
     admin.name,
     'ASSIGN_DONATION',
     `donation:${targetDonation.code}`,
-    `Gán giao dịch ${sourceDonation.sepay_transaction_id} vào mã ${targetDonation.code}`
+    `Gán giao dịch ${sourceDonation.provider_reference || 'PayOS'} vào mã ${targetDonation.code}`
   );
 
   if (targetDonation.email) {
-    sendThankYouEmail(
+    await sendThankYouEmail(
       {
         donationId: targetDonation.id,
         code: targetDonation.code,
@@ -404,7 +444,7 @@ adminRoutes.post('/donations/:id/assign', requireAuth, async (c) => {
         receiptToken,
       },
       db
-    ).catch(console.error);
+    );
   }
 
   return c.json({ success: true, message: `Đã gán thành công vào mã ${targetDonation.code}` });
@@ -429,7 +469,7 @@ adminRoutes.delete('/donations/:id/donor-data', requireAuth, async (c) => {
       phone = NULL,
       public_message = NULL,
       is_anonymous = 1,
-      raw_transfer_content = NULL
+      payment_raw_event = NULL
      WHERE id = ?`,
     [id]
   );
@@ -447,6 +487,50 @@ adminRoutes.delete('/donations/:id/donor-data', requireAuth, async (c) => {
   );
 
   return c.json({ success: true, message: 'Đã xóa dữ liệu cá nhân của người ủng hộ thành công.' });
+});
+
+// DELETE /api/v1/admin/donations/:id - Xóa hẳn một bản ghi ủng hộ
+adminRoutes.delete('/donations/:id', requireAuth, async (c) => {
+  const db = getDb();
+  const admin = c.get('admin') as AdminSession;
+  const id = c.req.param('id');
+  const donation = await db.queryOne<Donation>('SELECT * FROM donations WHERE id = ?', [id]);
+  if (!donation) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy bản ghi ủng hộ.' } }, 404);
+  }
+
+  const auditId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  const auditDetails = `Xóa bản ghi ${donation.code}; trạng thái ${donation.status}; số tiền ${(donation.actual_amount ?? donation.expected_amount).toLocaleString('vi-VN')}đ.`;
+  const d1Db = db as typeof db & {
+    batchExecute?: (statements: Array<{ sql: string; params?: unknown[] }>) => Promise<Array<{ changes: number }>>;
+  };
+
+  if (d1Db.batchExecute) {
+    const results = await d1Db.batchExecute([
+      { sql: 'DELETE FROM donations WHERE id = ?', params: [id] },
+      {
+        sql: `INSERT INTO audit_logs (id, admin_id, admin_name, action, target, details, created_at)
+              VALUES (?, ?, ?, 'DELETE_DONATION', ?, ?, ?)`,
+        params: [auditId, admin.adminId, admin.name, `donation:${donation.code}`, auditDetails, createdAt],
+      },
+    ]);
+    if (!results[0]?.changes) {
+      return c.json({ error: { code: 'NOT_FOUND', message: 'Bản ghi đã được xóa trước đó.' } }, 404);
+    }
+  } else {
+    await db.transaction(async (tx) => {
+      const deleted = await tx.execute('DELETE FROM donations WHERE id = ?', [id]);
+      if (!deleted.changes) throw new Error('Bản ghi đã được xóa trước đó.');
+      await tx.execute(
+        `INSERT INTO audit_logs (id, admin_id, admin_name, action, target, details, created_at)
+         VALUES (?, ?, ?, 'DELETE_DONATION', ?, ?, ?)`,
+        [auditId, admin.adminId, admin.name, `donation:${donation.code}`, auditDetails, createdAt]
+      );
+    });
+  }
+
+  return c.json({ success: true, message: `Đã xóa bản ghi ${donation.code}.` });
 });
 
 // -----------------------------------------------------------------------------
@@ -468,6 +552,10 @@ adminRoutes.post('/reports', requireAuth, async (c) => {
   const admin = c.get('admin') as AdminSession;
   const body = await c.req.json();
   const { report_date, title, content_markdown, total_income, total_expense, invoice_images } = body;
+  let safeInvoiceImages: string[] | null;
+  try { safeInvoiceImages = validateInvoiceImages(invoice_images); } catch (error: any) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: error.message } }, 400);
+  }
 
   if (!report_date || !title || !content_markdown) {
     return c.json({ error: { code: 'BAD_REQUEST', message: 'Vui lòng điền đủ ngày, tiêu đề và nội dung markdown.' } }, 400);
@@ -489,7 +577,7 @@ adminRoutes.post('/reports', requireAuth, async (c) => {
       content_markdown,
       Number(total_income || 0),
       Number(total_expense || 0),
-      invoice_images ? JSON.stringify(invoice_images) : null,
+      safeInvoiceImages ? JSON.stringify(safeInvoiceImages) : null,
       admin.name,
       now,
       now,
@@ -499,7 +587,7 @@ adminRoutes.post('/reports', requireAuth, async (c) => {
   await db.execute(
     `INSERT INTO daily_report_versions (id, report_id, title, content_markdown, total_income, total_expense, invoice_images, saved_by, saved_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [crypto.randomUUID(), id, title, content_markdown, Number(total_income || 0), Number(total_expense || 0), invoice_images ? JSON.stringify(invoice_images) : null, admin.name, now]
+    [crypto.randomUUID(), id, title, content_markdown, Number(total_income || 0), Number(total_expense || 0), safeInvoiceImages ? JSON.stringify(safeInvoiceImages) : null, admin.name, now]
   );
 
   await recordAuditLog(admin.adminId, admin.name, 'CREATE_REPORT', `report:${report_date}`, `Tạo báo cáo ngày ${report_date}`);
@@ -516,7 +604,12 @@ adminRoutes.put('/reports/:id', requireAuth, async (c) => {
   if (!current) return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy báo cáo cần sửa.' } }, 404);
   if (!body.title || !body.content_markdown) return c.json({ error: { code: 'BAD_REQUEST', message: 'Vui lòng điền tiêu đề và nội dung báo cáo.' } }, 400);
   const now = new Date().toISOString();
-  const images = Array.isArray(body.invoice_images) ? JSON.stringify(body.invoice_images) : current.invoice_images;
+  let images = current.invoice_images;
+  if (body.invoice_images !== undefined) {
+    try { images = JSON.stringify(validateInvoiceImages(body.invoice_images)); } catch (error: any) {
+      return c.json({ error: { code: 'BAD_REQUEST', message: error.message } }, 400);
+    }
+  }
   await db.execute(
     'UPDATE daily_reports SET title = ?, content_markdown = ?, total_income = ?, total_expense = ?, invoice_images = ?, updated_at = ? WHERE id = ?',
     [body.title, body.content_markdown, Number(body.total_income || 0), Number(body.total_expense || 0), images, now, id]
@@ -600,7 +693,7 @@ adminRoutes.put('/templates/:key', requireAuth, requireSuperAdmin, async (c) => 
 });
 
 // -----------------------------------------------------------------------------
-// LOGS & GIÁM SÁT SEPAY
+// LOGS & GIÁM SÁT THANH TOÁN
 // -----------------------------------------------------------------------------
 
 // GET /api/v1/admin/logs
@@ -639,16 +732,3 @@ adminRoutes.post('/emails/:id/resend', requireAuth, async (c) => {
   return c.json({ success: sent, message: sent ? 'Đã gửi lại email cảm ơn.' : 'Gửi lại email chưa thành công.' });
 });
 
-// GET /api/v1/admin/sepay-usage
-adminRoutes.get('/sepay-usage', requireAuth, async (c) => {
-  const monthlyCount = await getMonthlySepayCount();
-  return c.json({
-    success: true,
-    data: {
-      used: monthlyCount,
-      limit: 50,
-      isNearLimit: monthlyCount >= 40,
-      isOverLimit: monthlyCount >= 50,
-    },
-  });
-});

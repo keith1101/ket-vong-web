@@ -1,5 +1,4 @@
-export * from './adapter.js';
+export type { DatabaseAdapter } from './database-adapter.js';
+export * from './d1-adapter.js';
 export * from './types.js';
-export * from './migrate.js';
-export * from './seed.js';
 

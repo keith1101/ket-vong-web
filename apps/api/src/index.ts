@@ -1,7 +1,20 @@
-import { serve } from '@hono/node-server';
-import { createApp } from './app.js';
-import { config } from './config.js';
-import { expireOverdueDonations } from './services/donation-service.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../');
+dotenv.config({ path: path.resolve(repoRoot, '.env') });
+dotenv.config();
+
+const { serve } = await import('@hono/node-server');
+const { createApp } = await import('./app.js');
+const { config, configureConfig } = await import('./config.js');
+const { setDbForRuntime } = await import('./db.js');
+const { SqliteDatabaseAdapter } = await import('@ketvong/db/sqlite');
+const { expireOverdueDonations } = await import('./services/donation-service.js');
+
+configureConfig(process.env);
+setDbForRuntime(new SqliteDatabaseAdapter(path.resolve(repoRoot, config.dbPath)));
 
 const app = createApp();
 

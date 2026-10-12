@@ -1,81 +1,59 @@
 import { Hono } from 'hono';
-import { processSepayWebhook, type SepayWebhookPayload } from '../services/webhook-service.js';
-import { verifyHmacSha256 } from '../utils/hmac.js';
+import { processPayOSWebhook, type PayOSWebhookPayload } from '../services/webhook-service.js';
 import { config } from '../config.js';
+import { readTextBody, RequestPayloadError } from '../utils/request-security.js';
 
 export const webhookRoutes = new Hono();
 
-// POST /api/v1/webhooks/sepay - Nhận webhook SePay (SRS-010, SRS-011, SRS-012, SRS-013)
-webhookRoutes.post('/sepay', async (c) => {
+// POST /api/v1/webhooks/payos
+webhookRoutes.post('/payos', async (c) => {
   try {
-    const rawBody = await c.req.text();
-    const signature = 
-      c.req.header('x-sepay-signature') || 
-      c.req.header('X-Sepay-Signature') || 
-      c.req.header('x-signature') || 
-      c.req.header('X-Signature');
-
-    // Xác thực raw body trước khi parse hoặc chạm vào dữ liệu webhook.
-    if (!(await verifyHmacSha256(rawBody, signature, config.sepayWebhookSecret))) {
-      return c.json({ error: { code: 'UNAUTHORIZED', message: 'Chữ ký webhook không hợp lệ.' } }, 401);
-    }
-
-    let payload: SepayWebhookPayload = {};
+    const rawBody = await readTextBody(c, 64 * 1024);
+    let payload: PayOSWebhookPayload;
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      return c.json(
-        {
-          error: {
-            code: 'INVALID_PAYLOAD',
-            message: 'Không thể phân tích dữ liệu JSON từ webhook SePay.',
-          },
-        },
-        400
-      );
+      return c.json({ error: { code: 'INVALID_PAYLOAD', message: 'Dữ liệu webhook PayOS không phải JSON hợp lệ.' } }, 400);
     }
 
-    if (payload.id == null && payload.transaction_id == null) {
-      return c.json({ error: { code: 'INVALID_PAYLOAD', message: 'Webhook thiếu mã giao dịch.' } }, 400);
-    }
-    const amount = Number(payload.transferAmount ?? payload.amount);
-    if (!Number.isSafeInteger(amount) || amount < 0) {
-      return c.json({ error: { code: 'INVALID_PAYLOAD', message: 'Webhook có số tiền không hợp lệ.' } }, 400);
-    }
-
-    const result = await processSepayWebhook(payload, rawBody, signature);
-
-    if (result.action === 'rejected') {
-      return c.json(
-        {
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Chữ ký webhook không hợp lệ.',
-          },
-        },
-        401
-      );
+    let waitUntil: ((promise: Promise<any>) => void) | undefined;
+    try {
+      const executionContext = (c as any).executionCtx;
+      if (executionContext?.waitUntil) {
+        waitUntil = executionContext.waitUntil.bind(executionContext);
+      }
+    } catch {
+      // Môi trường Node.js / test không có executionCtx
     }
 
-    // SePay yêu cầu HTTP 200 {"success": true} (SRS-010)
-    return c.json({
-      success: true,
-      action: result.action,
-      reason: result.reason,
-      code: result.code,
+    const result = await processPayOSWebhook(payload, rawBody, undefined, {
+      waitUntil,
     });
-  } catch (error: any) {
-    console.error('[Webhook Route] Lỗi hệ thống khi xử lý webhook SePay:', error);
-    // Trả về 500 để SePay retry nếu lỗi nội bộ chưa giải quyết được (SRS-010)
-    return c.json(
-      {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Lỗi máy chủ khi xử lý giao dịch.',
-        },
-      },
-      500
-    );
+    if (result.action === 'rejected') {
+      console.warn('[PayOS Webhook] Từ chối payload:', {
+        reason: result.reason || 'unknown',
+        payloadCode: payload.code || null,
+        payloadSuccess: payload.success ?? null,
+        hasData: Boolean(payload.data),
+        dataKeys: payload.data ? Object.keys(payload.data).sort() : [],
+        signatureLength: payload.signature?.length || 0,
+        checksumConfigured: Boolean(config.payos.checksumKey),
+        dataFieldTypes: payload.data
+          ? {
+              orderCode: typeof payload.data.orderCode,
+              amount: typeof payload.data.amount,
+              reference: typeof payload.data.reference,
+            }
+          : {},
+      });
+      return c.json({ error: { code: 'UNAUTHORIZED', message: 'Webhook PayOS không hợp lệ.' } }, 401);
+    }
+    return c.json({ success: true, action: result.action, reason: result.reason, code: result.code });
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return c.json({ error: { code: 'PAYLOAD_TOO_LARGE', message: error.message } }, 413);
+    }
+    console.error('[PayOS Webhook] Lỗi hệ thống:', error);
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Lỗi máy chủ khi xử lý giao dịch ủng hộ.' } }, 500);
   }
 });
-

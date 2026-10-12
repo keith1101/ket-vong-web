@@ -44,33 +44,33 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Admin Header */}
-      <div className="bg-white rounded-3xl p-6 border border-brand-border shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[var(--color-surface)] rounded-3xl p-6 border border-[var(--color-border)] shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-brand-accent text-brand-orange flex items-center justify-center font-display font-extrabold text-xl">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] flex items-center justify-center font-display font-extrabold text-xl">
             {admin.name.slice(0, 1)}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-lg text-brand-text">{admin.name}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-orange text-white">
+              <span className="font-display font-bold text-lg text-[var(--kv-ink)]">{admin.name}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--kv-ink)] text-white font-display">
                 {admin.role}
               </span>
             </div>
-            <span className="text-xs text-brand-textMuted">{admin.email}</span>
+            <span className="text-xs text-[var(--kv-text-soft)] font-body">{admin.email}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate('/')}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-brand-orange hover:bg-brand-accent/50 flex items-center gap-1.5 transition-colors min-h-touch"
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)] hover:bg-[var(--kv-blue-bg)] flex items-center gap-1.5 transition-colors min-h-touch font-display"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Xem Website</span>
           </button>
           <button
             onClick={handleLogout}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 transition-colors min-h-touch"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 transition-colors min-h-touch font-display"
           >
             <LogOut className="w-4 h-4" />
             <span>Đăng Xuất</span>
@@ -79,21 +79,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       </div>
 
       {/* Admin Navigation Bar */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl border border-brand-border shadow-sm">
+      <div className="flex flex-wrap gap-2 mb-8 bg-[var(--color-surface)] p-2 rounded-2xl border border-[var(--color-border)] shadow-sm">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentSubPage === item.id;
           return (
             <button
               key={item.id}
-            onClick={() => {
-              setSubPage(item.id);
-              navigate(item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`);
-            }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all min-h-touch ${
+              onClick={() => {
+                setSubPage(item.id);
+                navigate(item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`);
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all min-h-touch font-display ${
                 isActive
-                  ? 'bg-brand-orange text-white shadow-md shadow-brand-orange/20'
-                  : 'text-brand-text hover:bg-brand-accent text-brand-textMuted'
+                  ? 'bg-[var(--kv-pink)] text-white shadow-sm'
+                  : 'text-[var(--kv-text)] hover:bg-[var(--kv-blue-bg)] hover:text-[var(--kv-ink)]'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -108,4 +108,3 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     </div>
   );
 };
-

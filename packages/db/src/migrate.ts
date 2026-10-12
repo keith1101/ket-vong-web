@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { SqliteDatabaseAdapter } from './adapter.js';
+import { SqliteDatabaseAdapter } from './sqlite-adapter.js';
 import { fileURLToPath } from 'node:url';
 
 // Load .env
@@ -17,11 +17,11 @@ function getDatabasePath(): string {
   let currentDir = process.cwd();
   while (currentDir !== path.parse(currentDir).root) {
     if (fs.existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
-      return path.join(currentDir, 'data', 'ketvong.db');
+      return path.join(currentDir, 'data', 'ketvong-payos.db');
     }
     currentDir = path.dirname(currentDir);
   }
-  return path.resolve(process.cwd(), 'data', 'ketvong.db');
+  return path.resolve(process.cwd(), 'data', 'ketvong-payos.db');
 }
 
 const dbPath = getDatabasePath();
@@ -37,24 +37,28 @@ export async function runMigrations() {
 
   try {
     const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-    const migrationFile = path.resolve(moduleDir, 'migrations/001_initial_schema.sql');
-    let sql: string;
-    if (fs.existsSync(migrationFile)) {
-      sql = fs.readFileSync(migrationFile, 'utf8');
-    } else {
-      // In case running from dist
-      const srcMigration = path.resolve(moduleDir, '../src/migrations/001_initial_schema.sql');
-      sql = fs.readFileSync(srcMigration, 'utf8');
-    }
-
+    const migrationFiles = ['001_initial_schema.sql', '002_admin_sessions.sql', '003_default_content.sql', '004_security_hardening.sql'];
     const rawDb = adapter.getRawDb();
-    rawDb.exec(sql);
-    try {
-      rawDb.exec('ALTER TABLE donations ADD COLUMN transaction_at TEXT');
-    } catch (error) {
-      if (!String(error).toLowerCase().includes('duplicate column')) throw error;
+    rawDb.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+      filename TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    )`);
+
+    for (const filename of migrationFiles) {
+      const applied = await adapter.queryOne('SELECT filename FROM schema_migrations WHERE filename = ?', [filename]);
+      if (applied) {
+        console.log(`[DB Migrate] Bỏ qua migration ${filename} đã chạy.`);
+        continue;
+      }
+      const workspaceMigration = path.resolve(process.cwd(), `packages/db/src/migrations/${filename}`);
+      const moduleMigration = path.resolve(moduleDir, `migrations/${filename}`);
+      const srcMigration = path.resolve(moduleDir, `../src/migrations/${filename}`);
+      const migrationPath = [workspaceMigration, moduleMigration, srcMigration].find((candidate) => fs.existsSync(candidate));
+      if (!migrationPath) throw new Error(`Không tìm thấy migration ${filename}.`);
+      rawDb.exec(fs.readFileSync(migrationPath, 'utf8'));
+      await adapter.execute('INSERT INTO schema_migrations (filename, applied_at) VALUES (?, ?)', [filename, new Date().toISOString()]);
+      console.log(`[DB Migrate] Chạy migration ${filename} thành công!`);
     }
-    console.log('[DB Migrate] Chạy initial schema thành công!');
 
     // Khởi tạo cài đặt mặc định nếu chưa có (SRS-001, SRS-062)
     const now = new Date().toISOString();
@@ -64,15 +68,10 @@ export async function runMigrations() {
       presets: JSON.stringify([1]),
       campaign_name: 'Workshop Thủ Công Kết Vòng',
       campaign_deadline: '',
-      campaign_target: '2300000',
-      bank_name: 'MBBank (Ngân hàng Quân Đội)',
-      bank_account_number: '0987654321',
-      bank_account_name: 'BUI ANH HUY',
-      bank_qr_image: '',
-      bank_qr_image_secondary: '',
-      contact_email: 'ketvong.workshop@gmail.com',
-      contact_phone: '0901234567',
-      campaign_intro: 'Dự án gây quỹ workshop kết vòng nhằm kết nối cộng đồng và mang lại những giá trị ý nghĩa cho các em nhỏ.',
+      campaign_target: '4000000',
+      contact_email: 'vongtayganket2006@gmail.com',
+      contact_phone: '0374519443',
+      campaign_intro: 'Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6–15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.',
       privacy_policy: 'Chúng tôi cam kết bảo vệ dữ liệu cá nhân của người ủng hộ theo Nghị định 13/2023/NĐ-CP. Thông tin liên hệ chỉ dùng để đối chiếu khi cần thiết và không bao giờ công khai.'
     };
 

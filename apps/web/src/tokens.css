@@ -1,0 +1,289 @@
+/* ==========================================================================
+   KẾT VÒNG — Design tokens (phương án 1: Crayon rainbow)
+   Nguồn màu: chữ crayon trong logo, hạt cườm, giấy ô ly trong art direction.
+   Cách dùng: <link> file này trước stylesheet chính, rồi chỉ dùng các biến
+   ở lớp "semantic" (--color-*, --space-*, --radius-*...) trong component.
+   ========================================================================== */
+
+/* Font: đều hỗ trợ tiếng Việt đầy đủ */
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700&family=Itim&display=swap");
+
+:root {
+  /* ---------- 1. Palette gốc (không dùng trực tiếp trong component) ---------- */
+  --kv-paper:        #FBF6EE;  /* giấy kem */
+  --kv-paper-deep:   #F4EBDD;  /* giấy kem đậm, dùng cho footer, vùng nhấn */
+  --kv-white:        #FFFFFF;
+
+  --kv-ink:          #1F3F9E;  /* xanh mực: tiêu đề, "PROJECT" trong logo */
+  --kv-ink-deep:     #162E78;
+  --kv-text:         #3B3A4A;  /* chữ thân bài, xám đậm ngả tím */
+  --kv-text-soft:    #6B6A7C;
+
+  --kv-pink:         #D81B7A;  /* hồng crayon, đã làm đậm để chữ trắng đạt AA */
+  --kv-pink-hover:   #B8146A;
+  --kv-pink-bright:  #F0278C;  /* chỉ dùng cho trang trí, không làm màu chữ */
+  --kv-orange:       #F58220;  /* chỉ dùng cho trang trí */
+  --kv-orange-text:  #C9610A;  /* cam dùng cho chữ và số liệu */
+  --kv-yellow:       #FFC20E;  /* chỉ dùng cho trang trí, không làm màu chữ */
+  --kv-green:        #12A84B;
+  --kv-purple:       #8A5FC8;
+  --kv-red:          #D8161E;
+  --kv-sky:          #A8C8FA;  /* xanh mây */
+  --kv-mint:         #BFE4DC;
+
+  /* Cặp nền pastel + chữ đậm cùng tông (dùng cho thẻ, badge, section) */
+  --kv-blue-bg:      #DCE9FD;  --kv-blue-fg:   #1F3F9E;
+  --kv-green-bg:     #D4F0DF;  --kv-green-fg:  #0C6B30;
+  --kv-pink-bg:      #FFD9E8;  --kv-pink-fg:   #9C1259;
+  --kv-purple-bg:    #E9DFF7;  --kv-purple-fg: #5B3A99;
+  --kv-yellow-bg:    #FFF0B3;  --kv-yellow-fg: #6B5200;
+  --kv-orange-bg:    #FFE3CC;  --kv-orange-fg: #8F4306;
+  --kv-mint-bg:      #DDF1EC;  --kv-mint-fg:   #1B5A4B;
+
+  /* ---------- 2. Semantic: màu ---------- */
+  --color-bg:            var(--kv-paper);
+  --color-bg-alt:        var(--kv-paper-deep);
+  --color-surface:       var(--kv-white);
+  --color-border:        #E6DCCB;
+  --color-border-strong: #CFC2AC;
+
+  --color-heading:       var(--kv-ink);
+  --color-text:          var(--kv-text);
+  --color-text-muted:    var(--kv-text-soft);
+  --color-link:          var(--kv-ink);
+  --color-link-hover:    var(--kv-pink);
+
+  /* Nút: mỗi màn hình chỉ nên có một nút primary */
+  --color-primary:        var(--kv-pink);
+  --color-primary-hover:  var(--kv-pink-hover);
+  --color-on-primary:     #FFFFFF;
+  --color-secondary:      var(--kv-ink);          /* viền và chữ của nút phụ */
+  --color-secondary-bg-hover: var(--kv-blue-bg);
+
+  --color-number:         var(--kv-orange-text);  /* số liệu lớn: 380.000đ... */
+  --color-focus:          var(--kv-ink);
+
+  /* Trạng thái */
+  --color-success-bg: var(--kv-green-bg);  --color-success-fg: var(--kv-green-fg);
+  --color-warning-bg: var(--kv-yellow-bg); --color-warning-fg: var(--kv-yellow-fg);
+  --color-danger-bg:  #FDE0E0;             --color-danger-fg:  #A3121A;
+  --color-info-bg:    var(--kv-blue-bg);   --color-info-fg:    var(--kv-blue-fg);
+
+  /* Thanh tiến độ */
+  --color-progress-track: #EFE5D3;
+  --color-progress-fill:  var(--kv-orange);
+
+  /* Vòng màu luân phiên cho thẻ/bước (dùng với :nth-child) */
+  --accent-1-bg: var(--kv-blue-bg);   --accent-1-fg: var(--kv-blue-fg);   --accent-1-dot: var(--kv-ink);
+  --accent-2-bg: var(--kv-green-bg);  --accent-2-fg: var(--kv-green-fg);  --accent-2-dot: var(--kv-green);
+  --accent-3-bg: var(--kv-pink-bg);   --accent-3-fg: var(--kv-pink-fg);   --accent-3-dot: var(--kv-pink);
+  --accent-4-bg: var(--kv-purple-bg); --accent-4-fg: var(--kv-purple-fg); --accent-4-dot: var(--kv-purple);
+  --accent-5-bg: var(--kv-yellow-bg); --accent-5-fg: var(--kv-yellow-fg); --accent-5-dot: var(--kv-yellow);
+  --accent-6-bg: var(--kv-orange-bg); --accent-6-fg: var(--kv-orange-fg); --accent-6-dot: var(--kv-orange);
+
+  /* ---------- 3. Semantic: font ---------- */
+  --font-display: "Baloo 2", "Nunito", system-ui, sans-serif;  /* tiêu đề, nút, số liệu */
+  --font-body:    "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hand:    "Itim", "Baloo 2", cursive;                  /* chú thích, lời chúc, nhãn nhỏ kiểu viết tay */
+
+  --fs-xs:   0.8125rem;                          /* 13px */
+  --fs-sm:   0.9375rem;                          /* 15px */
+  --fs-base: 1.0625rem;                          /* 17px */
+  --fs-lg:   1.25rem;
+  --fs-xl:   clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --fs-2xl:  clamp(2rem, 1.5rem + 2.2vw, 3rem);
+  --fs-hero: clamp(2.75rem, 2rem + 4vw, 4.5rem);
+  --fs-stat: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+
+  --lh-tight: 1.15;
+  --lh-snug:  1.35;
+  --lh-body:  1.65;
+  --measure:  62ch;                              /* độ rộng dòng tối đa cho đoạn văn */
+
+  /* ---------- 4. Semantic: bo góc ---------- */
+  --radius-xs:   6px;                            /* input nhỏ, tag */
+  --radius-sm:   10px;                           /* input, badge vuông */
+  --radius-md:   16px;                           /* thẻ nhỏ */
+  --radius-lg:   24px;                           /* thẻ lớn, khối hero */
+  --radius-pill: 999px;                          /* nút, pill */
+  /* Bo góc "lệch" kiểu nét sáp, dùng cho 1-2 khối nhấn mỗi trang */
+  --radius-crayon: 28px 22px 30px 20px / 22px 30px 20px 28px;
+
+  /* ---------- 5. Khoảng cách, bóng, viền ---------- */
+  --space-1: 0.25rem;  --space-2: 0.5rem;   --space-3: 0.75rem;
+  --space-4: 1rem;     --space-5: 1.5rem;   --space-6: 2rem;
+  --space-7: 3rem;     --space-8: 4.5rem;   --space-9: 6rem;
+  --container: 72rem;
+  --container-narrow: 40rem;                     /* form ủng hộ */
+
+  /* Bóng ngả nâu ấm thay vì xám lạnh */
+  --shadow-sm: 0 1px 2px rgba(92, 64, 30, .08), 0 1px 1px rgba(92, 64, 30, .05);
+  --shadow-md: 0 6px 18px rgba(92, 64, 30, .10), 0 2px 4px rgba(92, 64, 30, .06);
+  /* Bóng "dán sticker": lệch cứng, không blur */
+  --shadow-sticker: 3px 3px 0 var(--kv-ink);
+  --border-card: 1.5px solid var(--color-border);
+  --focus-ring: 0 0 0 3px var(--kv-paper), 0 0 0 5px var(--color-focus);
+
+  /* ---------- 6. Nền giấy ô ly ---------- */
+  --grid-size: 28px;
+  --grid-line: rgba(120, 165, 225, .22);         /* xanh nhạt như giấy ô ly trong ảnh */
+  --grid-line-strong: rgba(120, 165, 225, .38);
+
+  /* ---------- 7. Chuyển động ---------- */
+  --ease-out: cubic-bezier(.22, .8, .3, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+}
+
+/* ==========================================================================
+   Nền & kiểu chữ cơ bản
+   ========================================================================== */
+
+html { background: var(--color-bg); }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  /* Lưới caro 28px */
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+/* Section nền phẳng: tắt lưới để vùng đọc nhiều chữ/form sạch hơn */
+.kv-plain { background-image: none !important; background-color: var(--color-surface) !important; }
+.kv-alt   { background-image: none !important; background-color: var(--color-bg-alt) !important; }
+/* Lưới đậm hơn, dùng cho hero */
+.kv-grid-strong {
+  background-image:
+    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--color-heading);
+  line-height: var(--lh-tight);
+  font-weight: 700;
+  margin: 0 0 var(--space-3);
+}
+h1 { font-size: var(--fs-hero); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); line-height: var(--lh-snug); }
+h4 { font-size: var(--fs-lg); line-height: var(--lh-snug); }
+
+p { max-width: var(--measure); margin: 0 0 var(--space-4); }
+.text-center p,
+.text-center > p,
+p.text-center,
+p.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+a { color: var(--color-link); text-underline-offset: 3px; }
+a:hover { color: var(--color-link-hover); }
+
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-xs); }
+
+/* ==========================================================================
+   Thành phần mẫu dùng token
+   ========================================================================== */
+
+/* Nút */
+.kv-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  font-family: var(--font-display); font-weight: 600; font-size: var(--fs-base);
+  padding: .65em 1.4em; border-radius: var(--radius-pill);
+  border: 2px solid transparent; cursor: pointer; text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.kv-btn:active { transform: translateY(1px); }
+.kv-btn--primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary) !important;
+  border-color: var(--color-primary);
+  box-shadow: 0 3px 10px rgba(216, 27, 122, 0.25);
+}
+.kv-btn--primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-on-primary) !important;
+}
+.kv-btn--secondary {
+  background: var(--kv-white);
+  color: var(--color-secondary) !important;
+  border-color: var(--color-secondary);
+  box-shadow: 0 2px 6px rgba(31, 63, 158, 0.08);
+}
+.kv-btn--secondary:hover {
+  background: var(--color-secondary-bg-hover);
+  color: var(--color-secondary) !important;
+}
+
+/* Thẻ */
+.kv-card {
+  background: var(--color-surface); border: var(--border-card);
+  border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm);
+}
+.kv-card--sticker {
+  border: 2px solid var(--kv-ink);
+  border-radius: var(--radius-crayon);
+  box-shadow: var(--shadow-sticker);
+}
+
+/* Thẻ/bước đổi màu theo thứ tự, giống hạt cườm trên một sợi dây */
+.kv-tint { background: var(--tint-bg, var(--accent-1-bg)); color: var(--tint-fg, var(--accent-1-fg)); }
+.kv-tint h3, .kv-tint h4 { color: inherit; }
+.kv-tint-group > :nth-child(6n+1) { --tint-bg: var(--accent-1-bg); --tint-fg: var(--accent-1-fg); --tint-dot: var(--accent-1-dot); }
+.kv-tint-group > :nth-child(6n+2) { --tint-bg: var(--accent-2-bg); --tint-fg: var(--accent-2-fg); --tint-dot: var(--accent-2-dot); }
+.kv-tint-group > :nth-child(6n+3) { --tint-bg: var(--accent-3-bg); --tint-fg: var(--accent-3-fg); --tint-dot: var(--accent-3-dot); }
+.kv-tint-group > :nth-child(6n+4) { --tint-bg: var(--accent-4-bg); --tint-fg: var(--accent-4-fg); --tint-dot: var(--accent-4-dot); }
+.kv-tint-group > :nth-child(6n+5) { --tint-bg: var(--accent-5-bg); --tint-fg: var(--accent-5-fg); --tint-dot: var(--accent-5-dot); }
+.kv-tint-group > :nth-child(6n+6) { --tint-bg: var(--accent-6-bg); --tint-fg: var(--accent-6-fg); --tint-dot: var(--accent-6-dot); }
+.kv-dot { display: inline-block; width: .9em; height: .9em; border-radius: 50%; background: var(--tint-dot, var(--kv-ink)); }
+
+/* Badge / pill */
+.kv-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600;
+  padding: .25em .85em; border-radius: var(--radius-pill);
+  background: var(--tint-bg, var(--kv-blue-bg)); color: var(--tint-fg, var(--kv-blue-fg));
+}
+
+/* Số liệu lớn */
+.kv-stat { font-family: var(--font-display); font-size: var(--fs-stat); font-weight: 700; color: var(--color-number); line-height: 1; }
+.kv-stat__label { font-size: var(--fs-sm); color: var(--color-text-muted); }
+
+/* Thanh tiến độ */
+.kv-progress { height: 14px; border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
+.kv-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--color-progress-fill); }
+
+/* Form */
+.kv-input {
+  width: 100%; box-sizing: border-box; font: inherit; color: var(--color-text);
+  padding: .65em .9em; background: var(--color-surface);
+  border: 1.5px solid var(--color-border-strong); border-radius: var(--radius-sm);
+}
+.kv-input:focus { outline: none; border-color: var(--color-focus); box-shadow: var(--focus-ring); }
+
+/* Chú thích viết tay (lời chúc, sticker note) */
+.kv-hand { font-family: var(--font-hand); font-size: var(--fs-lg); color: var(--kv-pink-fg); }
+
+/* Thanh cầu vồng 6 màu: dùng làm đường phân cách hoặc viền dưới header */
+.kv-rainbow-rule {
+  height: 6px; border: 0; border-radius: var(--radius-pill);
+  background: linear-gradient(90deg,
+    var(--kv-pink-bright) 0 16.66%, var(--kv-red) 0 33.33%, var(--kv-orange) 0 50%,
+    var(--kv-yellow) 0 66.66%, var(--kv-green) 0 83.33%, var(--kv-ink) 0 100%);
+}
+
+/* Tôn trọng người dùng giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
