@@ -311,7 +311,7 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-display font-black text-sm sm:text-base text-[var(--kv-ink)]">
-                  Bạn đang có đơn ủng hộ chưa thanh toán
+                  Bạn đang có đơn ủng hộ chưa hoàn tất
                 </span>
                 <code className="text-xs font-mono font-black text-[var(--kv-orange)] bg-white px-2.5 py-0.5 rounded-lg border border-[var(--color-border)] shadow-2xs">
                   {pendingSession.donationCode}
@@ -329,7 +329,7 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
               onClick={handleResumePending}
               className="kv-btn kv-btn--primary text-xs py-2 px-4 shadow-xs"
             >
-              <span>Mở lại thanh toán</span>
+              <span>Mở lại đơn ủng hộ</span>
             </button>
             <button
               type="button"
@@ -528,7 +528,7 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
             'Đang xử lý đơn ủng hộ…'
           ) : isPendingReusable ? (
             <>
-              <span>Tiếp tục thanh toán mã {pendingSession?.donationCode} ({amount.toLocaleString('vi-VN')}đ)</span>
+              <span>Tiếp tục ủng hộ mã {pendingSession?.donationCode} ({amount.toLocaleString('vi-VN')}đ)</span>
               <ArrowRight className="w-5 h-5" />
             </>
           ) : (
