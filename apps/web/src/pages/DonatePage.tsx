@@ -96,6 +96,13 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
         // Kiểm tra xem có đơn cũ chưa thanh toán trong vòng 15 phút không
         const existing = getPendingSession();
         if (existing) {
+          if (data) {
+            existing.payment.bin = data.bank_bin || existing.payment.bin;
+            existing.payment.bankName = data.bank_name || existing.payment.bankName;
+            existing.payment.accountNumber = data.bank_account_number || existing.payment.accountNumber;
+            existing.payment.accountName = data.bank_account_name || existing.payment.accountName;
+            savePendingSession(existing);
+          }
           setPendingSession(existing);
           setQuantity(existing.quantity);
           setCustomQuantity(String(existing.quantity));
@@ -156,8 +163,15 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
   // Mở lại popup thanh toán của đơn đang chờ
   const handleResumePending = () => {
     if (!pendingSession) return;
+    if (summary) {
+      pendingSession.payment.bin = summary.bank_bin || pendingSession.payment.bin;
+      pendingSession.payment.bankName = summary.bank_name || pendingSession.payment.bankName;
+      pendingSession.payment.accountNumber = summary.bank_account_number || pendingSession.payment.accountNumber;
+      pendingSession.payment.accountName = summary.bank_account_name || pendingSession.payment.accountName;
+      savePendingSession(pendingSession);
+    }
     setSuccessCode(pendingSession.donationCode);
-    setActivePayment(pendingSession.payment);
+    setActivePayment({ ...pendingSession.payment });
   };
 
   // Kiểm tra xem đơn hiện tại có trùng với đơn đang chờ trong session không
