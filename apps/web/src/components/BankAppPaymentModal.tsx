@@ -563,32 +563,28 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
             </div>
           </div>
 
-          {/* KHỐI TRẠNG THÁI LẮNG NGHE REALTIME & NÚT KIỂM TRA */}
-          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-[var(--kv-green-bg)] border border-[var(--kv-green)]/40 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-[var(--kv-green-fg)] font-display">
-              <RefreshCw className="w-4 h-4 animate-spin text-[var(--kv-green)]" />
-              <span>Hệ thống đang tự động kiểm tra giao dịch theo thời gian thực…</span>
-            </div>
-            <p className="text-xs text-[var(--kv-text)] font-body max-w-lg mx-auto leading-relaxed">
-              Sau khi bạn bấm xác nhận chuyển tiền trên app ngân hàng, màn hình này sẽ <strong>tự động chuyển sang Thư Cảm Ơn</strong> sau vài giây.
-            </p>
-
+          {/* NÚT XÁC NHẬN KIỂM TRA GIAO DỊCH */}
+          <div className="p-4 rounded-2xl sm:rounded-3xl bg-[var(--kv-green-bg)] border border-[var(--kv-green)]/40 space-y-3 text-center">
             {checkMessage && (
-              <div className="p-3 rounded-xl bg-white border border-amber-200 text-amber-800 text-xs flex items-center justify-center gap-2 mt-2">
+              <div className="p-3 rounded-xl bg-white border border-amber-200 text-amber-800 text-xs flex items-center justify-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
                 <span>{checkMessage}</span>
               </div>
             )}
 
-            <div className="pt-2 flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center">
               <button
                 type="button"
                 disabled={checking}
                 onClick={handleManualCheck}
-                className="kv-btn kv-btn--secondary text-xs py-2 px-5 border-[var(--kv-green)] text-[var(--kv-green-fg)] hover:bg-white transition-all shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="kv-btn kv-btn--secondary text-xs sm:text-sm py-2.5 px-6 border-[var(--kv-green)] text-[var(--kv-green-fg)] hover:bg-white transition-all shadow-xs disabled:opacity-50 inline-flex items-center gap-2 font-display font-bold"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{checking ? 'Đang kiểm tra…' : 'Tôi đã chuyển tiền xong (Kiểm tra ngay)'}</span>
+                {checking ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-[var(--kv-green)]" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                <span>{checking ? 'Đang kiểm tra...' : 'Tôi đã chuyển tiền xong (Kiểm tra ngay)'}</span>
               </button>
             </div>
           </div>
