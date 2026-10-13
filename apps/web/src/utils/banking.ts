@@ -7,6 +7,7 @@ export interface BankInfo {
   color: string;
   bgLight: string;
   logo: string;
+  supportsAutofill: boolean;
 }
 
 export const VIETNAM_BANKS: BankInfo[] = [
@@ -19,46 +20,7 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#1428a0',
     bgLight: '#eef2ff',
     logo: '/images/banks/mb.png',
-  },
-  {
-    bin: 'MOMO',
-    code: 'MOMO',
-    shortName: 'Ví MoMo',
-    fullName: 'Ví điện tử MoMo',
-    appCode: 'momo',
-    color: '#a50064',
-    bgLight: '#fdf2f8',
-    logo: '/images/banks/momo.png',
-  },
-  {
-    bin: '970436',
-    code: 'VCB',
-    shortName: 'Vietcombank',
-    fullName: 'Ngân hàng TMCP Ngoại Thương VN',
-    appCode: 'vcb',
-    color: '#006241',
-    bgLight: '#e6f4ea',
-    logo: '/images/banks/vcb.png',
-  },
-  {
-    bin: '970407',
-    code: 'TCB',
-    shortName: 'Techcombank',
-    fullName: 'Ngân hàng TMCP Kỹ Thương VN',
-    appCode: 'tcb',
-    color: '#e21a22',
-    bgLight: '#fde8e8',
-    logo: '/images/banks/tcb.png',
-  },
-  {
-    bin: '970418',
-    code: 'BIDV',
-    shortName: 'BIDV',
-    fullName: 'Ngân hàng TMCP Đầu tư và Phát triển VN',
-    appCode: 'bidv',
-    color: '#0d6b52',
-    bgLight: '#e6f4ea',
-    logo: '/images/banks/bidv.png',
+    supportsAutofill: true,
   },
   {
     bin: '970415',
@@ -69,26 +31,18 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#005b94',
     bgLight: '#e0f2fe',
     logo: '/images/banks/icb.png',
+    supportsAutofill: true,
   },
   {
-    bin: '970423',
-    code: 'TPB',
-    shortName: 'TPBank',
-    fullName: 'Ngân hàng TMCP Tiên Phong',
-    appCode: 'tpb',
-    color: '#7b2cbf',
-    bgLight: '#f3e8ff',
-    logo: '/images/banks/tpb.png',
-  },
-  {
-    bin: '970432',
-    code: 'VPB',
-    shortName: 'VPBank',
-    fullName: 'Ngân hàng TMCP Việt Nam Thịnh Vượng',
-    appCode: 'vpb',
-    color: '#00a651',
-    bgLight: '#ecfdf5',
-    logo: '/images/banks/vpb.png',
+    bin: '970418',
+    code: 'BIDV',
+    shortName: 'BIDV',
+    fullName: 'Ngân hàng TMCP Đầu tư và Phát triển VN',
+    appCode: 'bidv',
+    color: '#0d6b52',
+    bgLight: '#e6f4ea',
+    logo: '/images/banks/bidv.png',
+    supportsAutofill: true,
   },
   {
     bin: '970416',
@@ -99,16 +53,7 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#0066b2',
     bgLight: '#e0f2fe',
     logo: '/images/banks/acb.png',
-  },
-  {
-    bin: '970405',
-    code: 'VBA',
-    shortName: 'Agribank',
-    fullName: 'Ngân hàng Nông nghiệp & PTNT VN',
-    appCode: 'vba',
-    color: '#9e1c23',
-    bgLight: '#fdf2f2',
-    logo: '/images/banks/vba.png',
+    supportsAutofill: true,
   },
   {
     bin: '970448',
@@ -119,6 +64,62 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#008542',
     bgLight: '#ecfdf5',
     logo: '/images/banks/ocb.png',
+    supportsAutofill: true,
+  },
+  {
+    bin: '970405',
+    code: 'VBA',
+    shortName: 'Agribank',
+    fullName: 'Ngân hàng Nông nghiệp & PTNT VN',
+    appCode: 'vba',
+    color: '#9e1c23',
+    bgLight: '#fdf2f2',
+    logo: '/images/banks/vba.png',
+    supportsAutofill: false,
+  },
+  {
+    bin: '970436',
+    code: 'VCB',
+    shortName: 'Vietcombank',
+    fullName: 'Ngân hàng TMCP Ngoại Thương VN',
+    appCode: 'vcb',
+    color: '#006241',
+    bgLight: '#e6f4ea',
+    logo: '/images/banks/vcb.png',
+    supportsAutofill: false,
+  },
+  {
+    bin: '970407',
+    code: 'TCB',
+    shortName: 'Techcombank',
+    fullName: 'Ngân hàng TMCP Kỹ Thương VN',
+    appCode: 'tcb',
+    color: '#e21a22',
+    bgLight: '#fde8e8',
+    logo: '/images/banks/tcb.png',
+    supportsAutofill: false,
+  },
+  {
+    bin: '970432',
+    code: 'VPB',
+    shortName: 'VPBank',
+    fullName: 'Ngân hàng TMCP Việt Nam Thịnh Vượng',
+    appCode: 'vpb',
+    color: '#00a651',
+    bgLight: '#ecfdf5',
+    logo: '/images/banks/vpb.png',
+    supportsAutofill: false,
+  },
+  {
+    bin: '970423',
+    code: 'TPB',
+    shortName: 'TPBank',
+    fullName: 'Ngân hàng TMCP Tiên Phong',
+    appCode: 'tpb',
+    color: '#7b2cbf',
+    bgLight: '#f3e8ff',
+    logo: '/images/banks/tpb.png',
+    supportsAutofill: false,
   },
   {
     bin: '970441',
@@ -129,6 +130,7 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#005ba6',
     bgLight: '#e0f2fe',
     logo: '/images/banks/vib.png',
+    supportsAutofill: false,
   },
   {
     bin: '970437',
@@ -139,6 +141,18 @@ export const VIETNAM_BANKS: BankInfo[] = [
     color: '#df1b27',
     bgLight: '#fef2f2',
     logo: '/images/banks/hdb.png',
+    supportsAutofill: false,
+  },
+  {
+    bin: 'MOMO',
+    code: 'MOMO',
+    shortName: 'Ví MoMo',
+    fullName: 'Ví điện tử MoMo',
+    appCode: 'momo',
+    color: '#a50064',
+    bgLight: '#fdf2f8',
+    logo: '/images/banks/momo.png',
+    supportsAutofill: false,
   },
 ];
 
@@ -222,4 +236,12 @@ export function getBankByBinOrCode(identifier?: string | null): BankInfo | undef
   return VIETNAM_BANKS.find(
     (b) => b.bin.toUpperCase() === clean || b.code.toUpperCase() === clean || b.appCode.toUpperCase() === clean
   );
+}
+
+/**
+ * Kiểm tra xem ngân hàng được chỉ định có hỗ trợ truyền kẹp thông tin qua Deeplink (Autofill) hay không.
+ */
+export function isBankAutofillSupported(identifier?: string | null): boolean {
+  const bank = getBankByBinOrCode(identifier);
+  return Boolean(bank?.supportsAutofill);
 }
