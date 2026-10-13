@@ -56,10 +56,12 @@ export const AdminDashboardPage: React.FC = () => {
         const delBtn = deleteButtonRef.current;
         if (!keepBtn || !delBtn) return;
 
-        if (event.shiftKey && document.activeElement === keepBtn) {
+        if (!event.shiftKey && document.activeElement === keepBtn) {
+          // Tab ở nút cuối (Giữ lại) -> quay lại nút đầu (Xóa vĩnh viễn)
           event.preventDefault();
           delBtn.focus();
-        } else if (!event.shiftKey && document.activeElement === delBtn) {
+        } else if (event.shiftKey && document.activeElement === delBtn) {
+          // Shift+Tab ở nút đầu (Xóa vĩnh viễn) -> nhảy tới nút cuối (Giữ lại)
           event.preventDefault();
           keepBtn.focus();
         }
@@ -309,25 +311,25 @@ export const AdminDashboardPage: React.FC = () => {
                 {deleteError && <p role="alert" className="mt-3 text-sm font-semibold text-red-700">{deleteError}</p>}
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-7">
+            <div className="flex justify-end gap-3 mt-7 items-center">
+              <button
+                ref={deleteButtonRef}
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteDonation}
+                className="px-4 py-2.5 rounded-xl bg-white border border-brand-border text-sm font-semibold text-brand-textMuted hover:text-red-600 hover:border-red-300 hover:bg-red-50/40 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+              >
+                {deleting ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
+              </button>
               <button
                 ref={keepButtonRef}
                 type="button"
                 autoFocus
                 disabled={deleting}
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2.5 rounded-xl border border-brand-border text-sm font-semibold text-brand-text hover:bg-brand-bg focus:outline-none focus:ring-2 focus:ring-brand-orange"
+                className="px-6 py-2.5 rounded-xl bg-red-600 text-white text-sm sm:text-base font-bold hover:bg-red-700 shadow-md shadow-red-600/20 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all"
               >
                 Giữ lại
-              </button>
-              <button
-                ref={deleteButtonRef}
-                type="button"
-                disabled={deleting}
-                onClick={handleDeleteDonation}
-                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                {deleting ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
               </button>
             </div>
           </section>
