@@ -111,7 +111,7 @@ Trong buổi workshop, các em được hướng dẫn xỏ vòng tay hạt cư�
 
 ### Vì sao là vòng tay
 - Trẻ 11-15 tuổi cần sân chơi vừa sức, được tôn trọng quyền tự chủ (tự chọn màu sắc, tự làm) thay vì chỉ nhận quà thụ động.
-- Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của bệnh viện (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
+- Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của bệnh viện.
 - Thành phẩm là vật kỷ niệm các em đeo mỗi ngày, gợi nhớ một trải nghiệm tích cực giữa quá trình điều trị.
 
 ### Mục tiêu cụ thể
