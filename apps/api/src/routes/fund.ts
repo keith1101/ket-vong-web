@@ -37,3 +37,55 @@ fundRoutes.get('/reports', async (c) => {
   }
 });
 
+// GET /api/v1/fund/sheet-ledger - Dữ liệu sổ quỹ thu chi từ Google Sheets
+fundRoutes.get('/sheet-ledger', async (c) => {
+  try {
+    const db = getDb();
+    const row = await db.queryOne<{ value: string }>(
+      "SELECT value FROM settings WHERE key = 'google_sheet_url'"
+    );
+    const sheetUrl = row?.value || 'https://docs.google.com/spreadsheets/d/12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M/edit?usp=sharing';
+    
+    const match = sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const spreadsheetId = match ? match[1] : '12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M';
+    const csvExportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv`;
+
+    try {
+      const response = await fetch(csvExportUrl, {
+        headers: { 'User-Agent': 'KetVong-App/1.0' },
+      });
+      if (!response.ok) {
+        throw new Error(`Google Sheets export returned status ${response.status}`);
+      }
+      const csvText = await response.text();
+      
+      c.header('Cache-Control', 'public, max-age=60');
+      return c.json({
+        success: true,
+        data: {
+          rawCsv: csvText,
+          sheetUrl,
+          spreadsheetId,
+          embedUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/htmlembed?widget=true&headers=false`,
+          syncedAt: new Date().toISOString(),
+        },
+      });
+    } catch (fetchError: any) {
+      console.warn('[Sheet Ledger] Lỗi kết nối Google Sheets, trả về URL gốc:', fetchError?.message);
+      return c.json({
+        success: true,
+        data: {
+          rawCsv: null,
+          sheetUrl,
+          spreadsheetId,
+          embedUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/htmlembed?widget=true&headers=false`,
+          syncedAt: new Date().toISOString(),
+        },
+      });
+    }
+  } catch (error: any) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Không thể tải sổ thu chi Google Sheets.' } }, 500);
+  }
+});
+
+

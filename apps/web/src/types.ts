@@ -16,6 +16,7 @@ export interface FundSummary {
   bank_account_number: string;
   bank_account_name: string;
   bank_qr_image: string;
+  google_sheet_url?: string;
 }
 
 export interface PublicDonationItem {

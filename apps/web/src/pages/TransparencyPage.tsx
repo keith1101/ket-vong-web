@@ -1,64 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { ProgressBar } from '../components/ProgressBar';
-import { fetchFundSummary, fetchPublicDonations, fetchDailyReports } from '../api';
-import type { FundSummary, PublicDonationItem, DailyReport } from '../types';
-import { 
-  ShieldCheck, 
-  Heart, 
-  Calendar, 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  Image,
+import { fetchFundSummary, fetchPublicDonations } from '../api';
+import type { FundSummary, PublicDonationItem } from '../types';
+import {
+  fetchSheetLedger,
+  getGoogleSheetCsvUrl,
+  type SheetLedgerData,
+  type SheetExpenseItem,
+} from '../services/google-sheets';
+import {
+  ShieldCheck,
+  Heart,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
   FileSpreadsheet,
   MessageSquare,
+  Search,
+  ExternalLink,
+  Download,
+  RefreshCw,
+  Table as TableIcon,
+  LayoutGrid,
   CheckCircle2,
-  Table
+  Wallet,
+  Coins,
+  TrendingDown,
+  Sparkles,
 } from 'lucide-react';
-
-interface LedgerRow {
-  id: number;
-  category: 'materials' | 'essentials' | 'setup' | 'printing' | 'logistics';
-  categoryLabel: string;
-  name: string;
-  unit: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-  statusLabel: string;
-  note: string;
-}
-
-const LEDGER_DATA: LedgerRow[] = [
-  { id: 1, category: 'materials', categoryLabel: '1. Vật tư hoạt động', name: 'Cuộn cước co giãn chuyên dụng 0.7mm', unit: 'Cuộn', quantity: 10, unitPrice: 25000, total: 250000, statusLabel: 'Đã khảo sát giá', note: 'Chợ Đại Quang Minh' },
-  { id: 2, category: 'materials', categoryLabel: '1. Vật tư hoạt động', name: 'Hạt cườm pastel & hạt chữ cái an toàn', unit: 'Kg', quantity: 1.5, unitPrice: 350000, total: 525000, statusLabel: 'Đã khảo sát giá', note: 'Phụ liệu hạt Chợ Lớn' },
-  { id: 3, category: 'materials', categoryLabel: '1. Vật tư hoạt động', name: 'Charm kim loại tráng men đa dạng hình', unit: 'Cái', quantity: 50, unitPrice: 5000, total: 250000, statusLabel: 'Đã khảo sát giá', note: 'Shopee Mall phụ kiện' },
-  { id: 4, category: 'materials', categoryLabel: '1. Vật tư hoạt động', name: 'Hộp giấy kraft & bao bì làm vòng tay', unit: 'Bộ', quantity: 25, unitPrice: 7000, total: 175000, statusLabel: 'Đã khảo sát giá', note: 'Bao bì Sài Gòn' },
-  { id: 5, category: 'materials', categoryLabel: '1. Vật tư hoạt động', name: 'Giấy A5, bút màu sáp, sticker trang trí', unit: 'Gói', quantity: 1, unitPrice: 100000, total: 100000, statusLabel: 'Đã khảo sát giá', note: 'Nhà sách Fahasa' },
-
-  { id: 6, category: 'essentials', categoryLabel: '2. Vật phẩm thiết yếu', name: 'Sữa tươi dinh dưỡng tiệt trùng đóng hộp', unit: 'Thùng', quantity: 2, unitPrice: 380000, total: 760000, statusLabel: 'Đã khảo sát giá', note: 'Vinamilk / Co.opmart' },
-  { id: 7, category: 'essentials', categoryLabel: '2. Vật phẩm thiết yếu', name: 'Bánh kẹo dinh dưỡng mềm an toàn', unit: 'Phần', quantity: 30, unitPrice: 14000, total: 420000, statusLabel: 'Đã khảo sát giá', note: 'Co.opmart' },
-  { id: 8, category: 'essentials', categoryLabel: '2. Vật phẩm thiết yếu', name: 'Khăn giấy ướt không cồn & nước rửa tay khô', unit: 'Bộ', quantity: 1, unitPrice: 120000, total: 120000, statusLabel: 'Đã khảo sát giá', note: 'Nhà thuốc Long Châu' },
-
-  { id: 9, category: 'setup', categoryLabel: '3. Setup & trang trí', name: 'Backdrop sân khấu bạt Hiflex 3m x 2m', unit: 'Tấm', quantity: 1, unitPrice: 350000, total: 350000, statusLabel: 'Đã khảo sát giá', note: 'Nhà in quảng cáo' },
-  { id: 10, category: 'setup', categoryLabel: '3. Setup & trang trí', name: 'Standee chữ X và bảng tên đón tiếp', unit: 'Bộ', quantity: 2, unitPrice: 100000, total: 200000, statusLabel: 'Đã khảo sát giá', note: 'Nhà in quảng cáo' },
-  { id: 11, category: 'setup', categoryLabel: '3. Setup & trang trí', name: 'Khăn trải bàn & khay nhựa chia ngăn cườm', unit: 'Bộ', quantity: 1, unitPrice: 150000, total: 150000, statusLabel: 'Đã khảo sát giá', note: 'Cửa hàng gia dụng' },
-
-  { id: 12, category: 'printing', categoryLabel: '4. In ấn & truyền thông', name: 'Thiệp mời trao tay và thiệp chúc viết tay', unit: 'Cái', quantity: 30, unitPrice: 5000, total: 150000, statusLabel: 'Đã khảo sát giá', note: 'Nhà in kỹ thuật số' },
-  { id: 13, category: 'printing', categoryLabel: '4. In ấn & truyền thông', name: 'Bảng infographic các bước xâu vòng A3', unit: 'Tấm', quantity: 5, unitPrice: 30000, total: 150000, statusLabel: 'Đã khảo sát giá', note: 'Nhà in kỹ thuật số' },
-  { id: 14, category: 'printing', categoryLabel: '4. In ấn & truyền thông', name: 'Bảng tên BTC, tình nguyện viên & sticker', unit: 'Trọn gói', quantity: 1, unitPrice: 200000, total: 200000, statusLabel: 'Đã khảo sát giá', note: 'Xưởng in ấn FPTU' },
-
-  { id: 15, category: 'logistics', categoryLabel: '5. Vận chuyển & dự phòng', name: 'Chi phí vận chuyển vật tư & thiết bị', unit: 'Chuyến', quantity: 2, unitPrice: 100000, total: 200000, statusLabel: 'Đã dự toán', note: 'Giao hàng công nghệ' },
-  { id: 16, category: 'logistics', categoryLabel: '5. Vận chuyển & dự phòng', name: 'Dự phòng phát sinh thực tế', unit: 'Khoản', quantity: 1, unitPrice: 100000, total: 100000, statusLabel: 'Đã dự toán', note: 'Quỹ dự phòng' },
-];
-
-// Đặt SHOW_EXCEL_SHEET = true khi sẵn sàng tích hợp chính thức
-const SHOW_EXCEL_SHEET = false;
 
 export const TransparencyPage: React.FC = () => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<'donations' | 'reports' | 'sheet'>('donations');
-  const [sheetCategoryFilter, setSheetCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'donations' | 'sheet'>('donations');
 
   // Tab 1: Donations state
   const [donations, setDonations] = useState<PublicDonationItem[]>([]);
@@ -66,12 +39,32 @@ export const TransparencyPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingDonations, setLoadingDonations] = useState(true);
 
-  // Tab 2: Reports state
-  const [reports, setReports] = useState<DailyReport[]>([]);
-  const [loadingReports, setLoadingReports] = useState(true);
+  // Tab 2: Google Sheets Ledger state
+  const [sheetData, setSheetData] = useState<SheetLedgerData | null>(null);
+  const [loadingSheet, setLoadingSheet] = useState(true);
+  const [refreshingSheet, setRefreshingSheet] = useState(false);
+  const [viewMode, setViewMode] = useState<'crayon' | 'embed'>('crayon');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    fetchFundSummary().then(setSummary).catch(console.error);
+    fetchFundSummary()
+      .then((data) => {
+        setSummary(data);
+        // Tải trước dữ liệu sổ quỹ Google Sheets
+        fetchSheetLedger(data.google_sheet_url)
+          .then(setSheetData)
+          .catch(console.error)
+          .finally(() => setLoadingSheet(false));
+      })
+      .catch((err) => {
+        console.error('Lỗi tải thông tin quỹ:', err);
+        // Fallback tải sheet mặc định
+        fetchSheetLedger()
+          .then(setSheetData)
+          .catch(console.error)
+          .finally(() => setLoadingSheet(false));
+      });
   }, []);
 
   useEffect(() => {
@@ -84,23 +77,39 @@ export const TransparencyPage: React.FC = () => {
         })
         .catch(console.error)
         .finally(() => setLoadingDonations(false));
-    } else if (activeTab === 'reports') {
-      setLoadingReports(true);
-      fetchDailyReports()
-        .then(setReports)
-        .catch(console.error)
-        .finally(() => setLoadingReports(false));
     }
   }, [activeTab, currentPage]);
 
-  const filteredLedger = sheetCategoryFilter === 'all' 
-    ? LEDGER_DATA 
-    : LEDGER_DATA.filter((row) => row.category === sheetCategoryFilter);
+  const handleRefreshSheet = async () => {
+    setRefreshingSheet(true);
+    try {
+      const refreshed = await fetchSheetLedger(summary?.google_sheet_url, true);
+      setSheetData(refreshed);
+    } catch (err) {
+      console.error('Lỗi khi làm mới sổ quỹ:', err);
+    } finally {
+      setRefreshingSheet(false);
+    }
+  };
 
-  const totalFilteredBudget = filteredLedger.reduce((acc, row) => acc + row.total, 0);
+  // Lọc dữ liệu bảng tính
+  const filteredItems: SheetExpenseItem[] = (sheetData?.items || []).filter((item) => {
+    const matchCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const query = searchQuery.trim().toLowerCase();
+    const matchSearch =
+      !query ||
+      item.item.toLowerCase().includes(query) ||
+      item.note.toLowerCase().includes(query) ||
+      item.paymentMethod.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query);
+    return matchCategory && matchSearch;
+  });
+
+  const totalFilteredExpense = filteredItems.reduce((sum, it) => sum + it.amount, 0);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      {/* Header */}
       <div className="text-center mb-8 space-y-2">
         <div className="kv-pill bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 font-display mb-1">
           <ShieldCheck className="w-4 h-4 text-[var(--kv-ink)]" />
@@ -110,54 +119,44 @@ export const TransparencyPage: React.FC = () => {
           Nhật Ký Minh Bạch Quỹ
         </h1>
         <p className="text-sm sm:text-base text-[var(--kv-text-soft)] max-w-xl mx-auto font-body text-center">
-          Mọi khoản đóng góp và chi tiêu đều được hệ thống tự động ghi nhận và công khai minh bạch đến từng đồng.
+          Mọi khoản đóng góp qua cổng và chi tiêu thực tế đều được hệ thống tự động ghi nhận và công khai minh bạch.
         </p>
       </div>
 
       {/* 4 Chỉ số quỹ & tiến độ */}
       <ProgressBar summary={summary} />
 
-      {/* Tabs */}
+      {/* Tabs chuyển đổi: Chỉ Tab 1 và Tab 2 */}
       <div className="flex border-b border-[var(--color-border)] mb-8 overflow-x-auto no-scrollbar">
         <button
           onClick={() => {
             setActiveTab('donations');
             setCurrentPage(1);
           }}
-          className={`px-4 sm:px-6 py-3 font-display font-bold text-sm sm:text-base whitespace-nowrap transition-colors border-b-2 min-h-touch ${
+          className={`px-4 sm:px-6 py-3 font-display font-bold text-sm sm:text-base whitespace-nowrap transition-colors border-b-2 min-h-touch flex items-center gap-2 ${
             activeTab === 'donations'
               ? 'border-[var(--kv-pink)] text-[var(--kv-pink)]'
               : 'border-transparent text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)]'
           }`}
         >
-          Khoản Ủng Hộ Đã Nhận ({summary?.donation_count || 0})
+          <Heart className="w-4 h-4" />
+          <span>Khoản Ủng Hộ Đã Nhận ({summary?.donation_count || 0})</span>
         </button>
+
         <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-4 sm:px-6 py-3 font-display font-bold text-sm sm:text-base whitespace-nowrap transition-colors border-b-2 min-h-touch ${
-            activeTab === 'reports'
-              ? 'border-[var(--kv-pink)] text-[var(--kv-pink)]'
+          onClick={() => setActiveTab('sheet')}
+          className={`px-4 sm:px-6 py-3 font-display font-bold text-sm sm:text-base whitespace-nowrap transition-colors border-b-2 min-h-touch flex items-center gap-2 ${
+            activeTab === 'sheet'
+              ? 'border-[var(--kv-green)] text-[var(--kv-green)]'
               : 'border-transparent text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)]'
           }`}
         >
-          Báo Cáo Thu / Chi Hàng Ngày ({reports.length})
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>Sổ Quỹ Thu Chi (Google Sheets)</span>
         </button>
-        {SHOW_EXCEL_SHEET && (
-          <button
-            onClick={() => setActiveTab('sheet')}
-            className={`px-4 sm:px-6 py-3 font-display font-bold text-sm sm:text-base whitespace-nowrap transition-colors border-b-2 min-h-touch flex items-center gap-1.5 ${
-              activeTab === 'sheet'
-                ? 'border-[var(--kv-green)] text-[var(--kv-green)]'
-                : 'border-transparent text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)]'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Bảng Kê Thu Chi (Excel)</span>
-          </button>
-        )}
       </div>
 
-      {/* TAB 1: Danh sách đóng góp */}
+      {/* TAB 1: Danh sách đóng góp (Từ cổng PayOS) */}
       {activeTab === 'donations' && (
         <div>
           {loadingDonations ? (
@@ -182,11 +181,11 @@ export const TransparencyPage: React.FC = () => {
                 return (
                   <div
                     key={index}
-                    className="p-4 sm:p-5 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] hover:border-[var(--kv-ink)]/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                    className="p-4 sm:p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[var(--color-border-strong)] transition-colors"
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-display font-bold text-base sm:text-lg text-[var(--kv-ink)]">
+                        <span className="font-display font-bold text-base text-[var(--kv-ink)]">
                           {item.display_name}
                         </span>
                         {item.display_name === 'Ẩn danh' && (
@@ -196,11 +195,10 @@ export const TransparencyPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Hiển thị lời nhắn của người ủng hộ */}
                       {item.public_message && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--kv-pink-bg)] text-[var(--kv-pink-fg)] rounded-xl border border-[var(--kv-pink-fg)]/20 text-xs italic font-body">
                           <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[var(--kv-pink)]" />
-                          <span>"{item.public_message}"</span>
+                          <span>&quot;{item.public_message}&quot;</span>
                         </div>
                       )}
 
@@ -246,257 +244,314 @@ export const TransparencyPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: Báo cáo thu chi hàng ngày */}
-      {activeTab === 'reports' && (
+      {/* TAB 2: Sổ Quỹ Thu Chi (Liên kết Google Sheets) */}
+      {activeTab === 'sheet' && (
         <div className="space-y-6">
-          {loadingReports ? (
-            <div className="text-center py-12 text-sm text-[var(--kv-text-soft)]">Đang tải báo cáo...</div>
-          ) : reports.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-3xl border border-[var(--color-border)]">
-              <FileText className="w-12 h-12 text-[var(--kv-pink)]/40 mx-auto mb-3" />
-              <p className="font-bold text-[var(--kv-ink)] font-display">Chưa có báo cáo nào được đăng.</p>
-              <p className="text-xs text-[var(--kv-text-soft)] mt-1 font-body">Ban tổ chức sẽ cập nhật báo cáo thu/chi sau mỗi ngày diễn ra hoạt động.</p>
-            </div>
-          ) : (
-            reports.map((report) => (
-              <div key={report.id} className="bg-[var(--color-surface)] rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-border)]/60 pb-4 mb-4">
-                  <div>
-                    <span className="text-xs font-bold text-[var(--kv-orange-fg)] bg-[var(--kv-orange-bg)] px-2.5 py-1 rounded-full font-display">
-                      Ngày {report.report_date}
-                    </span>
-                    <h3 className="font-display font-bold text-xl text-[var(--kv-ink)] mt-2">
-                      {report.title}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs font-semibold font-display">
-                    <span className="text-[var(--kv-green-fg)]">Thu: +{report.total_income.toLocaleString('vi-VN')} đ</span>
-                    <span className="text-[var(--kv-red)]">Chi: -{report.total_expense.toLocaleString('vi-VN')} đ</span>
-                  </div>
-                </div>
-
-                {/* Markdown content */}
-                <div className="prose prose-sm max-w-none text-[var(--kv-text)] leading-relaxed whitespace-pre-wrap font-body">
-                  {report.content_markdown}
-                </div>
-
-                {/* Hóa đơn nếu có */}
-                {report.invoice_images && (
-                  <div className="mt-4 pt-4 border-t border-[var(--color-border)]/60">
-                    <span className="text-xs font-bold text-[var(--kv-text-soft)] flex items-center gap-1 mb-2 font-display">
-                      <Image className="w-4 h-4 text-[var(--kv-ink)]" /> Hóa đơn / Chứng từ đính kèm
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {JSON.parse(report.invoice_images).map((imgUrl: string, idx: number) => (
-                        <a
-                          key={idx}
-                          href={imgUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-lg bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] text-xs font-semibold hover:underline font-display"
-                        >
-                          Xem chứng từ {idx + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* TAB 3: Bảng kê chi tiết thu chi mô phỏng Excel (Ẩn để tích hợp sau) */}
-      {SHOW_EXCEL_SHEET && activeTab === 'sheet' && (
-        <div className="space-y-6">
-          {/* Thanh công cụ mô phỏng Excel */}
-          <div className="bg-[#107c41] text-white rounded-t-3xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+          {/* Thanh tiêu đề liên kết Google Sheets */}
+          <div className="bg-[#107c41] text-white rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">
-                <FileSpreadsheet className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-7 h-7 text-white" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-display font-extrabold text-base sm:text-lg">
-                    KetVong_KeHoachThuChi_2026.xlsx
-                  </h3>
-                  <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full font-semibold">
-                    Chỉ đọc
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display font-extrabold text-lg sm:text-xl tracking-tight">
+                    {sheetData?.title || 'Sổ Quỹ Thu Chi Chi Tiết'}
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20">
+                    <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                    Live Google Sheets
                   </span>
                 </div>
-                <p className="text-xs text-white/80 font-body">
-                  Bảng tính kế hoạch ngân sách dự toán &amp; thực tế chiến dịch Kết Vòng
+                <p className="text-xs text-white/80 mt-1 font-body">
+                  Bảng kê khai minh bạch từng hóa đơn, khoản mục mua sắm và chi phí vận hành workshop.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-                Đồng bộ ngân sách 4.000.000đ
-              </span>
+            {/* Các nút thao tác với Google Sheets */}
+            <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={handleRefreshSheet}
+                disabled={refreshingSheet}
+                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Đồng bộ lại dữ liệu mới nhất từ Google Sheets"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshingSheet ? 'animate-spin' : ''}`} />
+                <span>{refreshingSheet ? 'Đang tải...' : 'Làm mới'}</span>
+              </button>
+
+              {sheetData?.sheetUrl && (
+                <a
+                  href={sheetData.sheetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-white text-[#107c41] hover:bg-emerald-50 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Mở Google Sheets</span>
+                </a>
+              )}
+
+              {sheetData?.sheetUrl && (
+                <a
+                  href={getGoogleSheetCsvUrl(sheetData.sheetUrl)}
+                  download="KetVong_ThuChi.csv"
+                  className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                  title="Tải file CSV dữ liệu"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">CSV</span>
+                </a>
+              )}
             </div>
           </div>
 
-          {/* Thanh công thức Excel & Bộ lọc danh mục */}
-          <div className="bg-[var(--kv-paper-deep)] p-3.5 border-x border-b border-[var(--color-border)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-[var(--kv-text-soft)] bg-white px-3 py-1.5 rounded-xl border border-[var(--color-border)] grow max-w-md">
-              <span className="font-bold text-[var(--kv-ink)]">fx</span>
-              <span className="text-[var(--color-border-strong)]">|</span>
-              <span className="text-[var(--kv-ink)]">=SUM(G2:G17) [Ngân sách dự toán: 4.000.000đ]</span>
-            </div>
+          {/* 4 Thẻ chỉ số lấy từ Google Sheets */}
+          {sheetData && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)] shadow-xs space-y-1">
+                <span className="text-[11px] font-semibold text-[var(--kv-text-soft)] flex items-center gap-1 font-display">
+                  <Coins className="w-3.5 h-3.5 text-[var(--kv-ink)]" /> Ngân Sách Dự Toán
+                </span>
+                <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-ink)]">
+                  {sheetData.targetBudget.toLocaleString('vi-VN')} đ
+                </div>
+              </div>
 
-            {/* Filter buttons */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-              <button
-                onClick={() => setSheetCategoryFilter('all')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all ${
-                  sheetCategoryFilter === 'all'
-                    ? 'bg-[var(--kv-ink)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                Tất cả (16)
-              </button>
-              <button
-                onClick={() => setSheetCategoryFilter('materials')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
-                  sheetCategoryFilter === 'materials'
-                    ? 'bg-[var(--kv-orange)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                1. Vật tư (5)
-              </button>
-              <button
-                onClick={() => setSheetCategoryFilter('essentials')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
-                  sheetCategoryFilter === 'essentials'
-                    ? 'bg-[var(--kv-pink)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                2. Thiết yếu (3)
-              </button>
-              <button
-                onClick={() => setSheetCategoryFilter('setup')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
-                  sheetCategoryFilter === 'setup'
-                    ? 'bg-[var(--kv-ink)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                3. Setup (3)
-              </button>
-              <button
-                onClick={() => setSheetCategoryFilter('printing')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
-                  sheetCategoryFilter === 'printing'
-                    ? 'bg-[var(--kv-green)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                4. In ấn (3)
-              </button>
-              <button
-                onClick={() => setSheetCategoryFilter('logistics')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
-                  sheetCategoryFilter === 'logistics'
-                    ? 'bg-[var(--kv-blue-fg)] text-white shadow-xs'
-                    : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
-                }`}
-              >
-                5. Vận chuyển &amp; DP (2)
-              </button>
-            </div>
-          </div>
+              <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)] shadow-xs space-y-1">
+                <span className="text-[11px] font-semibold text-[var(--kv-text-soft)] flex items-center gap-1 font-display">
+                  <TrendingDown className="w-3.5 h-3.5 text-[var(--kv-orange-fg)]" /> Đã Chi Thực Tế
+                </span>
+                <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--color-number)]">
+                  {sheetData.totalSpent.toLocaleString('vi-VN')} đ
+                </div>
+              </div>
 
-          {/* Bảng tính Excel Sheet */}
-          <div className="bg-white rounded-b-3xl border border-[var(--color-border)] shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  {/* Excel Column Letters: A, B, C, D, E, F, G, H, I */}
-                  <tr className="bg-[#f3f2f1] text-[var(--kv-text-soft)] font-mono text-[10px] border-b border-[var(--color-border)] select-none">
-                    <th className="w-10 p-2 text-center border-r border-[var(--color-border)]">#</th>
-                    <th className="p-2 border-r border-[var(--color-border)]">A (Phân loại)</th>
-                    <th className="p-2 border-r border-[var(--color-border)]">B (Tên vật phẩm / Hàng hóa)</th>
-                    <th className="p-2 text-center border-r border-[var(--color-border)]">C (ĐVT)</th>
-                    <th className="p-2 text-right border-r border-[var(--color-border)]">D (Số lượng)</th>
-                    <th className="p-2 text-right border-r border-[var(--color-border)]">E (Đơn giá)</th>
-                    <th className="p-2 text-right border-r border-[var(--color-border)]">F (Thành tiền)</th>
-                    <th className="p-2 border-r border-[var(--color-border)]">G (Trạng thái)</th>
-                    <th className="p-2">H (Ghi chú / Nơi mua)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)] font-body">
-                  {filteredLedger.map((row, index) => (
-                    <tr 
-                      key={row.id} 
-                      className="hover:bg-[#f8f9fa] transition-colors group"
-                    >
-                      <td className="p-2.5 text-center font-mono text-[11px] text-[var(--kv-text-soft)] bg-[#fbfbfb] border-r border-[var(--color-border)] select-none">
-                        {index + 1}
-                      </td>
-                      <td className="p-2.5 border-r border-[var(--color-border)] font-semibold text-[var(--kv-ink)] whitespace-nowrap">
-                        {row.categoryLabel}
-                      </td>
-                      <td className="p-2.5 border-r border-[var(--color-border)] font-medium text-[var(--kv-text)]">
-                        {row.name}
-                      </td>
-                      <td className="p-2.5 text-center border-r border-[var(--color-border)] text-[var(--kv-text-soft)]">
-                        {row.unit}
-                      </td>
-                      <td className="p-2.5 text-right font-mono border-r border-[var(--color-border)]">
-                        {row.quantity}
-                      </td>
-                      <td className="p-2.5 text-right font-mono border-r border-[var(--color-border)] text-[var(--kv-text-soft)]">
-                        {row.unitPrice.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="p-2.5 text-right font-mono font-bold text-[var(--color-number)] border-r border-[var(--color-border)]">
-                        {row.total.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="p-2.5 border-r border-[var(--color-border)] whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          {row.statusLabel}
-                        </span>
-                      </td>
-                      <td className="p-2.5 text-[var(--kv-text-soft)] italic">
-                        {row.note}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-[#f0f9f3] font-bold border-t-2 border-[#107c41] text-[var(--kv-ink)]">
-                    <td colSpan={6} className="p-3 text-right font-display text-sm">
-                      TỔNG CỘNG DỰ TOÁN ({filteredLedger.length} MỤC):
-                    </td>
-                    <td className="p-3 text-right font-mono font-extrabold text-sm sm:text-base text-[var(--kv-green)] border-r border-[var(--color-border)]">
-                      {totalFilteredBudget.toLocaleString('vi-VN')} đ
-                    </td>
-                    <td colSpan={2} className="p-3 text-xs text-[var(--kv-text-soft)] italic font-body">
-                      * Ngân sách chuẩn toàn dự án: 4.000.000đ
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+              <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)] shadow-xs space-y-1">
+                <span className="text-[11px] font-semibold text-[var(--kv-text-soft)] flex items-center gap-1 font-display">
+                  <Wallet className="w-3.5 h-3.5 text-[var(--kv-green-fg)]" /> Ngân Sách Còn Lại
+                </span>
+                <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-green-fg)]">
+                  {sheetData.remainingBudget.toLocaleString('vi-VN')} đ
+                </div>
+              </div>
 
-            {/* Chú thích phía dưới bảng tính */}
-            <div className="p-4 sm:p-5 bg-[var(--kv-paper)] border-t border-[var(--color-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[var(--kv-text-soft)]">
-              <div className="space-y-1 font-body">
-                <p>
-                  💛 <strong>Ghi chú cam kết:</strong> Toàn bộ kinh phí còn dư sau chương trình sẽ được gửi tặng quỹ của cơ sở lưu trú Ba Thùy, nhằm tiếp tục hỗ trợ các em nhỏ trong quá trình điều trị và sinh hoạt sau này.
-                </p>
-                <p>
-                  🧾 <strong>Chứng từ thực tế:</strong> Các hóa đơn đỏ, phiếu thu và hình ảnh chứng từ thực tế sau khi mua sắm sẽ được tải lên công khai tại tab <em>"Báo Cáo Thu / Chi Hàng Ngày"</em>.
-                </p>
+              <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)] shadow-xs space-y-1">
+                <span className="text-[11px] font-semibold text-[var(--kv-text-soft)] flex items-center gap-1 font-display">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--kv-purple-fg)]" /> Tỷ Lệ Sử Dụng
+                </span>
+                <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-purple-fg)]">
+                  {sheetData.usageRate}
+                </div>
               </div>
             </div>
+          )}
+
+          {/* Thanh công cụ tìm kiếm, lọc danh mục & chuyển chế độ xem */}
+          <div className="bg-[var(--color-surface)] rounded-2xl p-4 border border-[var(--color-border)] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Tìm kiếm */}
+            <div className="relative grow max-w-md">
+              <Search className="w-4 h-4 text-[var(--kv-text-soft)] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm tên vật dụng, món đồ, nơi mua..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--color-border-strong)] text-xs bg-[var(--kv-paper)] focus:outline-none focus:border-[var(--kv-ink)]"
+              />
+            </div>
+
+            {/* Toggle chuyển đổi chế độ xem */}
+            <div className="flex items-center gap-1.5 bg-[var(--kv-paper)] p-1 rounded-xl border border-[var(--color-border)] shrink-0 self-end md:self-auto">
+              <button
+                type="button"
+                onClick={() => setViewMode('crayon')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all flex items-center gap-1.5 ${
+                  viewMode === 'crayon'
+                    ? 'bg-white text-[var(--kv-ink)] shadow-xs'
+                    : 'text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)]'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Bảng Giao Diện</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('embed')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all flex items-center gap-1.5 ${
+                  viewMode === 'embed'
+                    ? 'bg-white text-[var(--kv-ink)] shadow-xs'
+                    : 'text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)]'
+                }`}
+              >
+                <TableIcon className="w-3.5 h-3.5" />
+                <span>Google Sheet Gốc</span>
+              </button>
+            </div>
           </div>
+
+          {/* CHẾ ĐỘ 1: BẢNG GIAO DIỆN CRAYON (TABLE VIEW) */}
+          {viewMode === 'crayon' && (
+            <div className="space-y-4">
+              {/* Bộ lọc danh mục */}
+              {sheetData && sheetData.categories.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
+                      selectedCategory === 'all'
+                        ? 'bg-[var(--kv-ink)] text-white shadow-xs'
+                        : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
+                    }`}
+                  >
+                    Tất cả ({sheetData.items.length})
+                  </button>
+                  {sheetData.categories.map((cat) => {
+                    const count = sheetData.items.filter((it) => it.category === cat).length;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold font-display transition-all whitespace-nowrap ${
+                          selectedCategory === cat
+                            ? 'bg-[var(--kv-orange)] text-white shadow-xs'
+                            : 'bg-white text-[var(--kv-text-soft)] hover:bg-[var(--kv-paper)] border border-[var(--color-border)]'
+                        }`}
+                      >
+                        {cat} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bảng dữ liệu trên Desktop */}
+              <div className="bg-white rounded-3xl border border-[var(--color-border)] shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[var(--kv-paper)] text-[var(--kv-ink)] font-display text-[11px] font-bold border-b border-[var(--color-border)] select-none">
+                        <th className="w-12 p-3 text-center border-r border-[var(--color-border)]">STT</th>
+                        <th className="p-3 border-r border-[var(--color-border)] w-28">Ngày</th>
+                        <th className="p-3 border-r border-[var(--color-border)] w-36">Phân Loại</th>
+                        <th className="p-3 border-r border-[var(--color-border)]">Tên Món / Vật Phẩm</th>
+                        <th className="p-3 text-right border-r border-[var(--color-border)] w-32">Số Tiền</th>
+                        <th className="p-3 text-center border-r border-[var(--color-border)] w-32">Phương Thức</th>
+                        <th className="p-3">Ghi Chú / Nơi Mua</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--color-border)] font-body">
+                      {loadingSheet ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-12 text-[var(--kv-text-soft)]">
+                            Đang kết nối và đồng bộ dữ liệu từ Google Sheets...
+                          </td>
+                        </tr>
+                      ) : filteredItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-12 text-[var(--kv-text-soft)]">
+                            Không tìm thấy khoản chi tiêu nào phù hợp với bộ lọc.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-[var(--kv-paper)]/50 transition-colors group">
+                            <td className="p-3 text-center font-mono font-bold text-[var(--kv-text-soft)] bg-[var(--kv-paper)]/30 border-r border-[var(--color-border)]">
+                              {item.stt}
+                            </td>
+                            <td className="p-3 border-r border-[var(--color-border)] text-[var(--kv-text-soft)] whitespace-nowrap">
+                              {item.date || '—'}
+                            </td>
+                            <td className="p-3 border-r border-[var(--color-border)] font-semibold text-[var(--kv-ink)] whitespace-nowrap">
+                              <span className="px-2 py-0.5 rounded-lg bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] text-[11px] font-display">
+                                {item.category}
+                              </span>
+                            </td>
+                            <td className="p-3 border-r border-[var(--color-border)] font-medium text-[var(--kv-text)]">
+                              {item.item ? (
+                                <span>{item.item}</span>
+                              ) : (
+                                <span className="text-[var(--kv-text-soft)] italic font-body">
+                                  (Dự thảo khoản chi mục {item.category})
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-display font-extrabold text-sm text-[var(--color-number)] border-r border-[var(--color-border)] whitespace-nowrap">
+                              {item.amount > 0 ? `${item.amount.toLocaleString('vi-VN')} đ` : '0 đ'}
+                            </td>
+                            <td className="p-3 text-center border-r border-[var(--color-border)] whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--kv-paper-deep)] text-[var(--kv-text-soft)] border border-[var(--color-border)]">
+                                {item.paymentMethod || 'Chuyển khoản'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-[var(--kv-text-soft)] italic">
+                              {item.note || '—'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-[var(--kv-green-bg)] text-[var(--kv-green-fg)] font-bold border-t-2 border-[var(--kv-green)]">
+                        <td colSpan={4} className="p-3.5 text-right font-display text-xs sm:text-sm">
+                          TỔNG CỘNG CHI TIÊU ({filteredItems.length} MỤC):
+                        </td>
+                        <td className="p-3.5 text-right font-display font-extrabold text-sm sm:text-base border-r border-[var(--color-border)] whitespace-nowrap">
+                          {totalFilteredExpense.toLocaleString('vi-VN')} đ
+                        </td>
+                        <td colSpan={2} className="p-3.5 text-xs font-body italic text-[var(--kv-green-fg)]/80">
+                          * Tự động đồng bộ thời gian thực từ Google Sheets
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Ghi chú chân bảng */}
+                <div className="p-4 sm:p-5 bg-[var(--kv-paper)] border-t border-[var(--color-border)] text-xs text-[var(--kv-text-soft)] space-y-1 font-body">
+                  <p>
+                    💛 <strong>Cam kết minh bạch:</strong> Mọi khoản chi mua sắm đều có hóa đơn, chứng từ đối soát. Toàn bộ kinh phí còn dư sau workshop sẽ được gửi tặng quỹ của cơ sở lưu trú Ba Thùy hỗ trợ sinh hoạt cho các em bệnh nhi.
+                  </p>
+                  <p>
+                    📊 <strong>Nguồn dữ liệu:</strong> Dữ liệu trên bảng được cập nhật trực tiếp từ file Google Sheets của Ban tổ chức. Bạn có thể bấm nút <em>&quot;Mở Google Sheets&quot;</em> phía trên để đối chiếu.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CHẾ ĐỘ 2: NHÚNG GOOGLE SHEETS GỐC (EMBED VIEW) */}
+          {viewMode === 'embed' && sheetData?.embedUrl && (
+            <div className="bg-white rounded-3xl border border-[var(--color-border)] shadow-xs overflow-hidden space-y-3 p-3 sm:p-4">
+              <div className="flex items-center justify-between px-2 pt-1 text-xs text-[var(--kv-text-soft)]">
+                <span className="font-display font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Đang hiển thị bản nhúng trực tiếp Google Sheets (Chỉ đọc)
+                </span>
+                <a
+                  href={sheetData.sheetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-[var(--kv-pink)] hover:underline flex items-center gap-1"
+                >
+                  <span>Mở toàn màn hình</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="rounded-2xl overflow-hidden border border-[var(--color-border)] bg-gray-50">
+                <iframe
+                  title="Sổ Quỹ Thu Chi Kết Vòng"
+                  src={sheetData.embedUrl}
+                  className="w-full h-[600px] sm:h-[750px] border-0"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

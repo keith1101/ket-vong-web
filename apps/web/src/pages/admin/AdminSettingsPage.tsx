@@ -227,6 +227,42 @@ export const AdminSettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Phần 4: Tích Hợp Google Sheets Thu Chi */}
+        <div>
+          <h3 className="font-display font-bold text-base text-brand-text border-b border-brand-border/60 pb-2 mb-4">
+            4. Tích Hợp Google Sheets Sổ Quỹ Thu Chi
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-brand-textMuted mb-1">
+                Đường dẫn Google Sheets (URL chia sẻ công khai):
+              </label>
+              <input
+                type="url"
+                value={settings.google_sheet_url || ''}
+                onChange={(e) => handleChange('google_sheet_url', e.target.value)}
+                placeholder="https://docs.google.com/spreadsheets/d/12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M/edit?usp=sharing"
+                className="w-full px-3 py-2.5 rounded-xl border border-brand-border text-xs font-mono"
+              />
+              <p className="text-[11px] text-brand-textMuted mt-1.5 leading-relaxed">
+                💡 Dán đường dẫn bảng tính Google Sheets quản lý thu chi của workshop. Hãy đảm bảo bảng tính đã được bật chế độ chia sẻ <strong>&quot;Bất kỳ ai có đường liên kết đều có thể xem&quot;</strong> để hệ thống tự động đồng bộ.
+              </p>
+            </div>
+            {settings.google_sheet_url && (
+              <div className="pt-2">
+                <a
+                  href={settings.google_sheet_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-bg text-brand-text text-xs font-semibold hover:text-brand-orange border border-brand-border transition-colors"
+                >
+                  <span>🔗 Mở kiểm tra bảng tính Google Sheets</span>
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={saving}

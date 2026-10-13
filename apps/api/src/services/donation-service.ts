@@ -280,7 +280,7 @@ export async function getFundSummary(db?: DatabaseAdapter): Promise<FundSummary 
 
   // Đọc cài đặt
   const settingsRows = await database.query<{ key: string; value: string }>(
-    "SELECT key, value FROM settings WHERE key IN ('campaign_target', 'unit_price', 'max_quantity', 'presets', 'campaign_name', 'campaign_intro', 'privacy_policy', 'contact_email', 'contact_phone')"
+    "SELECT key, value FROM settings WHERE key IN ('campaign_target', 'unit_price', 'max_quantity', 'presets', 'campaign_name', 'campaign_intro', 'privacy_policy', 'contact_email', 'contact_phone', 'google_sheet_url')"
   );
   const settingsMap = new Map(settingsRows.map((r) => [r.key, r.value]));
 
@@ -319,6 +319,7 @@ export async function getFundSummary(db?: DatabaseAdapter): Promise<FundSummary 
     bank_account_number: '',
     bank_account_name: '',
     bank_qr_image: '',
+    google_sheet_url: settingsMap.get('google_sheet_url') || 'https://docs.google.com/spreadsheets/d/12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M/edit?usp=sharing',
   };
 }
 
