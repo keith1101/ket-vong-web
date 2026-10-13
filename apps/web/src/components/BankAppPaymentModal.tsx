@@ -201,10 +201,9 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                 <Heart className="w-3.5 h-3.5 fill-[var(--kv-pink)] text-[var(--kv-pink)]" />
                 <span>Ủng Hộ Kết Vòng</span>
               </span>
-              <span className="w-2 h-2 rounded-full bg-[var(--kv-orange)] animate-ping" />
             </div>
             <h2 id={modalTitleId} className="font-display font-black text-xl sm:text-2xl text-[var(--kv-ink)] leading-tight">
-              Thanh Toán Qua Ngân Hàng
+              Ủng Hộ Qua Ngân Hàng
             </h2>
             <p className="font-hand text-xs sm:text-sm text-[var(--kv-pink-fg)]">
               Trao một vòng tay, kết một yêu thương
@@ -437,7 +436,7 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--kv-pink)] hover:underline font-display"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Mở cổng thanh toán PayOS</span>
+                        <span>Mở cổng ủng hộ PayOS</span>
                       </a>
                     </div>
                   )}
