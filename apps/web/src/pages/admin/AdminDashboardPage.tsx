@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminGetDonations, adminApproveDonation, adminEraseDonorData, adminDeleteDonation } from '../../api';
 import type { Donation } from '../../types';
 import { Search, Filter, AlertCircle, Trash2, CheckCircle2, Clock, XCircle, UserX, AlertTriangle } from 'lucide-react';
+import { formatDateTime } from '../../utils/date';
 
 export const AdminDashboardPage: React.FC = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -199,8 +200,8 @@ export const AdminDashboardPage: React.FC = () => {
                           {statusInfo.label}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-brand-textMuted">
-                        {new Date(d.created_at).toLocaleDateString('vi-VN')}
+                      <td className="py-3 px-3 text-brand-textMuted whitespace-nowrap">
+                        {formatDateTime(d.created_at)}
                       </td>
                       <td className="py-3 px-3 font-mono text-[11px] text-brand-textMuted">
                         {d.provider_reference || d.provider_order_code || '-'}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminGetDonations, adminApproveDonation, adminRejectDonation, adminAssignDonation } from '../../api';
 import type { Donation } from '../../types';
 import { AlertTriangle, CheckCircle, XCircle, Link2, Search, ArrowRight, ShieldAlert } from 'lucide-react';
+import { formatDateTime } from '../../utils/date';
 
 export const AdminReviewQueuePage: React.FC = () => {
   const [items, setItems] = useState<Donation[]>([]);
@@ -142,7 +143,7 @@ export const AdminReviewQueuePage: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {items.map((item) => {
-            const date = new Date(item.created_at).toLocaleString('vi-VN');
+            const date = formatDateTime(item.created_at);
             const reasonBadge = {
               amount_mismatch: { label: 'Lệch Số Tiền', bg: 'bg-amber-100 text-amber-800' },
               missing_code: { label: 'Thiếu Mã Ủng Hộ', bg: 'bg-red-100 text-red-800' },
