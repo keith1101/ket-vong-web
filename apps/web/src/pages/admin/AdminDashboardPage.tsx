@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { adminGetDonations, adminApproveDonation, adminEraseDonorData, adminDeleteDonation } from '../../api';
 import type { Donation } from '../../types';
 import { Search, Filter, AlertCircle, Trash2, CheckCircle2, Clock, XCircle, UserX, AlertTriangle } from 'lucide-react';
@@ -12,6 +12,9 @@ export const AdminDashboardPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const keepButtonRef = useRef<HTMLButtonElement | null>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement | null>(null);
+  const triggerElementRef = useRef<HTMLElement | null>(null);
   const loadData = async () => {
     setLoading(true);
     try {
@@ -29,12 +32,45 @@ export const AdminDashboardPage: React.FC = () => {
   }, [statusFilter]);
 
   useEffect(() => {
-    if (!deleteTarget) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !deleting) setDeleteTarget(null);
+    if (!deleteTarget) {
+      if (triggerElementRef.current) {
+        triggerElementRef.current.focus();
+      }
+      return;
+    }
+
+    // Luôn ưu tiên focus ngay lập tức vào nút "Giữ lại" thay vì "Xóa vĩnh viễn"
+    const focusTimer = setTimeout(() => {
+      keepButtonRef.current?.focus();
+    }, 30);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !deleting) {
+        setDeleteTarget(null);
+        return;
+      }
+
+      // Trap focus giữa nút "Giữ lại" và "Xóa vĩnh viễn"
+      if (event.key === 'Tab') {
+        const keepBtn = keepButtonRef.current;
+        const delBtn = deleteButtonRef.current;
+        if (!keepBtn || !delBtn) return;
+
+        if (event.shiftKey && document.activeElement === keepBtn) {
+          event.preventDefault();
+          delBtn.focus();
+        } else if (!event.shiftKey && document.activeElement === delBtn) {
+          event.preventDefault();
+          keepBtn.focus();
+        }
+      }
     };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [deleteTarget, deleting]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -225,7 +261,11 @@ export const AdminDashboardPage: React.FC = () => {
                           <UserX className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => { setDeleteError(null); setDeleteTarget(d); }}
+                          onClick={(e) => {
+                            triggerElementRef.current = e.currentTarget;
+                            setDeleteError(null);
+                            setDeleteTarget(d);
+                          }}
                           title="Xóa toàn bộ bản ghi ủng hộ"
                           aria-label={`Xóa bản ghi ủng hộ ${d.code}`}
                           className="p-1.5 rounded-lg text-brand-textMuted hover:text-red-700 hover:bg-red-50 transition-colors"
@@ -271,6 +311,7 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
             <div className="flex justify-end gap-3 mt-7">
               <button
+                ref={keepButtonRef}
                 type="button"
                 autoFocus
                 disabled={deleting}
@@ -280,10 +321,11 @@ export const AdminDashboardPage: React.FC = () => {
                 Giữ lại
               </button>
               <button
+                ref={deleteButtonRef}
                 type="button"
                 disabled={deleting}
                 onClick={handleDeleteDonation}
-                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-60"
+                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 {deleting ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
               </button>
