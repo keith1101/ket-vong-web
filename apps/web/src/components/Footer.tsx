@@ -52,7 +52,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[var(--kv-pink)] shrink-0" />
-                <a href={`tel:${(summary?.contact_phone || '0919670831').replace(/\s+/g, '')}`} className="hover:text-[var(--kv-pink)] transition-colors">
+                <a href={`tel:${(summary?.contact_phone || '0374519443').replace(/\s+/g, '')}`} className="hover:text-[var(--kv-pink)] transition-colors">
                   {summary?.contact_phone || '0919 670 831'}
                 </a>
               </div>
