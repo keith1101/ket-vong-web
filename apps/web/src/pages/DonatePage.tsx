@@ -135,6 +135,16 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
         <p className="text-sm text-[var(--kv-text-soft)] font-body max-w-xl mx-auto text-center">
           Điền thông tin và hoàn tất ủng hộ an toàn qua PayOS.
         </p>
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => navigate('/thanh-toan/ket-qua')}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--kv-orange-bg)] text-[var(--kv-orange-fg)] text-xs font-bold font-display hover:opacity-80 transition-opacity"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Xem trước mẫu Thư Cảm Ơn (Bản thử nghiệm)</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] rounded-3xl border-2 border-[var(--color-border-strong)] shadow-sm p-6 sm:p-10 space-y-6">

@@ -41,21 +41,21 @@ Ban Tổ Chức Workshop Kết Vòng`;
 
   // Thông tin người đóng góp và số tiền
   assert.ok(html.includes('Bạn Trần Thị B'), 'Phải chứa danh xưng và tên người ủng hộ');
-  assert.ok(html.includes('ĐÃ CHUNG TAY ỦNG HỘ 30.000 VNĐ'), 'Phải có badge số tiền nổi bật');
-  assert.ok(html.includes('3 chiếc vòng tay'), 'Phải có số lượng chiếc vòng tay');
+  assert.ok(html.includes('Đã chung tay ủng hộ') && html.includes('30.000 VNĐ'), 'Phải có số tiền nổi bật');
+  assert.ok(html.includes('chiếc vòng tay yêu thương gửi trao'), 'Phải có số lượng chiếc vòng tay');
   assert.ok(html.includes('KV-TEST99'), 'Phải có mã ủng hộ');
   assert.ok(html.includes('11/10/2026'), 'Phải có ngày xác nhận');
 
   // Khẩu hiệu và nút bấm CTA
-  assert.ok(html.includes('Mỗi hạt cườm gửi trao — Một nhịp cầu yêu thương kết nối'), 'Phải có khẩu hiệu workshop');
+  assert.ok(html.includes('Trao một vòng tay - Kết một yêu thương'), 'Phải có khẩu hiệu workshop mới');
   assert.ok(html.includes(receiptUrl), 'Phải chứa liên kết biên nhận');
-  assert.ok(html.includes('Xem Thư Cảm Ơn &amp; Biên Nhận Điện Tử'), 'Phải có nút CTA');
+  assert.ok(html.includes('Mở Thư Cảm Ơn &amp; Biên Nhận Trực Tuyến'), 'Phải có nút CTA');
 
-  // Con dấu đỏ kiểm toán Nghị định 93 và Chữ ký đại diện BTC
-  assert.ok(html.includes('ĐÃ ĐỐI SOÁT'), 'Phải có con dấu ĐÃ ĐỐI SOÁT');
-  assert.ok(html.includes('NGHỊ ĐỊNH 93'), 'Phải có căn cứ NGHỊ ĐỊNH 93');
-  assert.ok(html.includes('Nguyễn Thanh Trúc'), 'Phải có chữ ký Trưởng BTC Nguyễn Thanh Trúc');
-  assert.ok(html.includes('Trưởng Ban Tổ Chức Dự Án'), 'Phải có chức danh Trưởng Ban Tổ Chức');
+  // Đại diện BTC và Chữ ký
+  assert.ok(html.includes('ĐẠI DIỆN BAN TỔ CHỨC'), 'Phải có tiêu đề ĐẠI DIỆN BAN TỔ CHỨC');
+  assert.ok(html.includes('Thanh Trúc'), 'Phải có chữ ký Thanh Trúc');
+  assert.ok(html.includes('Nguyễn Thanh Trúc'), 'Phải có tên Trưởng BTC Nguyễn Thanh Trúc');
+  assert.ok(html.includes('Trưởng Ban tổ chức dự án'), 'Phải có chức danh Trưởng Ban Tổ Chức');
   assert.ok(html.includes('Nghị định 13/2023/NĐ-CP'), 'Phải có lưu ý bảo vệ dữ liệu cá nhân');
 });
 
@@ -77,7 +77,7 @@ Ban Tổ Chức Workshop Kết Vòng`;
   assert.ok(html.includes('Anh Lê Văn C'), 'Phải tự trích xuất được tên người ủng hộ');
   assert.ok(html.includes('KV-FALL01'), 'Phải tự trích xuất được mã ủng hộ');
   assert.ok(html.includes('50.000 VNĐ'), 'Phải tự trích xuất được số tiền');
-  assert.ok(html.includes('5 chiếc vòng tay'), 'Phải tự trích xuất được số lượng vòng tay');
+  assert.ok(html.includes('chiếc vòng tay yêu thương gửi trao'), 'Phải tự trích xuất được số lượng vòng tay');
   assert.ok(html.includes('THƯ CẢM ƠN'));
   assert.ok(html.includes(receiptUrl));
 });

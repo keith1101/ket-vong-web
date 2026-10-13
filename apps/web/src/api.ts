@@ -1,6 +1,20 @@
 import type { FundSummary, PublicDonationItem, AdminUser, Donation, DailyReport } from './types';
 
-export const API_BASE = `${import.meta.env.VITE_API_URL || ''}/api/v1`;
+const getApiBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return 'https://ketvong-api.fb-autocomment.workers.dev';
+    }
+  }
+  return '';
+};
+
+export const API_BASE = `${getApiBaseUrl()}/api/v1`;
 let csrfToken: string | null = null;
 
 export function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
@@ -46,7 +60,17 @@ export async function fetchDonationStatus(code: string): Promise<{ code: string;
   return data.data;
 }
 
-export async function fetchPaymentStatus(orderCode: string): Promise<{ code: string; status: string; approved_at: string | null }> {
+export async function fetchPaymentStatus(orderCode: string): Promise<{
+  code: string;
+  status: string;
+  approved_at: string | null;
+  payment_expires_at?: string | null;
+  title?: string;
+  display_name?: string;
+  amount?: number;
+  quantity?: number;
+  is_anonymous?: boolean;
+}> {
   const statusToken = window.localStorage.getItem(`ketvong:payment-status:${orderCode}`);
   if (!statusToken) throw new Error('Không tìm thấy mã bảo mật để kiểm tra trạng thái ủng hộ.');
   const res = await apiFetch(`${API_BASE}/donations/status`, {

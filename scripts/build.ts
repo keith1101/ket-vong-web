@@ -20,6 +20,10 @@ async function runBuild() {
     execSync('node node_modules/vite/bin/vite.js build', {
       cwd: path.resolve('apps/web'),
       stdio: 'inherit',
+      env: {
+        ...process.env,
+        VITE_API_URL: process.env.VITE_API_URL || 'https://ketvong-api.fb-autocomment.workers.dev',
+      },
     });
 
     console.log('[Build] ✅ Toàn bộ monorepo đã được build thành công!');

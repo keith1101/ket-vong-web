@@ -150,10 +150,35 @@ donationRoutes.post('/status', async (c) => {
   const orderCode = Number(body.orderCode);
   const statusTokenHash = await hashSha256(body.statusToken);
   const donation = await getDb().queryOne<{
-    code: string; status: string; approved_at: string | null; payment_expires_at: string | null;
-  }>('SELECT code, status, approved_at, payment_expires_at FROM donations WHERE provider_order_code = ? AND public_status_token_hash = ?', [orderCode, statusTokenHash]);
+    code: string;
+    status: string;
+    approved_at: string | null;
+    payment_expires_at: string | null;
+    title: string;
+    display_name: string;
+    expected_amount: number;
+    actual_amount: number | null;
+    quantity: number;
+    is_anonymous: number;
+  }>(
+    'SELECT code, status, approved_at, payment_expires_at, title, display_name, expected_amount, actual_amount, quantity, is_anonymous FROM donations WHERE provider_order_code = ? AND public_status_token_hash = ?',
+    [orderCode, statusTokenHash]
+  );
   if (!donation) return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy giao dịch ủng hộ.' } }, 404);
-  return c.json({ success: true, data: donation });
+  return c.json({
+    success: true,
+    data: {
+      code: donation.code,
+      status: donation.status,
+      approved_at: donation.approved_at,
+      payment_expires_at: donation.payment_expires_at,
+      title: donation.title,
+      display_name: donation.display_name,
+      amount: donation.actual_amount ?? donation.expected_amount,
+      quantity: donation.quantity,
+      is_anonymous: donation.is_anonymous === 1,
+    },
+  });
 });
 
 // Endpoint cũ bị vô hiệu hóa vì mã giao dịch PayOS có thể đoán được.

@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDonationStatus, verifyReceipt, API_BASE, apiFetch } from '../api';
+import QRCode from 'qrcode';
+import { fetchDonationStatus, verifyReceipt } from '../api';
 import {
-  Heart,
-  Download,
   CheckCircle2,
   ShieldCheck,
   AlertCircle,
   ArrowLeft,
-  Printer,
   Copy,
   Check,
-  Share2,
-  Sparkles,
   QrCode,
 } from 'lucide-react';
+import { ThankYouLetterCard } from '../components/ThankYouLetterCard';
 
 interface ReceiptPageProps {
   code: string;
@@ -26,13 +23,30 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
   const [receiptData, setReceiptData] = useState<any | null>(null);
   const [statusData, setStatusData] = useState<{ code: string; status: string; approved_at: string | null } | null>(null);
   const [token, setToken] = useState<string>('');
-  const [downloading, setDownloading] = useState(false);
   const [copiedType, setCopiedType] = useState<string | null>(null);
+  const [qrSvg, setQrSvg] = useState<string>('');
 
   useEffect(() => {
     // JS đọc fragment #access=<token> (không bao giờ gửi lên server qua URL)
     const hash = window.location.hash;
     const match = hash.match(/access=([a-f0-9]+)/i);
+
+    // Hỗ trợ chế độ xem thử nghiệm Demo
+    if (code.toLowerCase() === 'demo' || code.toLowerCase().startsWith('demo-') || code.toLowerCase() === 'kv-demo') {
+      setReceiptData({
+        code: 'KV-6889AB',
+        title: 'Bạn',
+        display_name: 'Bùi Anh Huy',
+        amount: 10000,
+        quantity: 1,
+        unit_price: 10000,
+        created_at: '2026-10-24T09:45:00Z',
+        approved_at: '2026-10-24T10:00:00Z',
+        is_anonymous: false,
+      });
+      setLoading(false);
+      return;
+    }
 
     if (!match || !match[1]) {
       fetchDonationStatus(code)
@@ -55,27 +69,36 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
       .finally(() => setLoading(false));
   }, [code]);
 
+  // Tự động sinh mã QR SVG chuẩn xác dẫn trực tiếp đến Thư Cảm Ơn & Biên Nhận
+  useEffect(() => {
+    if (!receiptData) return;
+    const targetUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/dong-gop/${encodeURIComponent(receiptData.code)}${token ? `#access=${token}` : ''}`
+      : `/dong-gop/${receiptData.code}`;
+
+    QRCode.toString(targetUrl, {
+      type: 'svg',
+      margin: 1,
+      color: { dark: '#483426', light: '#ffffff' },
+    })
+      .then((svg) => setQrSvg(svg))
+      .catch((err) => {
+        console.warn('Lỗi sinh mã QR phía client:', err);
+        if (receiptData.qr_svg) setQrSvg(receiptData.qr_svg);
+      });
+  }, [receiptData, token]);
+
+  const receiptUrl = receiptData
+    ? (typeof window !== 'undefined'
+        ? `${window.location.origin}/dong-gop/${encodeURIComponent(receiptData.code)}${token ? `#access=${token}` : ''}`
+        : `/dong-gop/${receiptData.code}`)
+    : '';
+
   const copyToClipboard = (text: string, type: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setCopiedType(type);
       setTimeout(() => setCopiedType(null), 2500);
-    }
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Thư Cảm Ơn — Dự Án Workshop Kết Vòng',
-          text: `Tôi vừa đồng hành ủng hộ ${receiptData?.quantity || 1} chiếc vòng tay cùng các em nhỏ tại Workshop Kết Vòng!`,
-          url: window.location.href,
-        });
-      } catch {
-        // người dùng hủy chia sẻ
-      }
-    } else {
-      copyToClipboard(window.location.href, 'link');
     }
   };
 
@@ -142,139 +165,10 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
       })
     : '';
 
-  const downloadLetterPng = async () => {
-    if (!token) {
-      setErrorMsg('Thiếu liên kết bảo mật hợp lệ để tải thư cảm ơn.');
-      return;
-    }
-    setDownloading(true);
-    try {
-      const letterEndpoint = `${API_BASE}/receipts/${encodeURIComponent(code)}/letter`;
-      const response = await apiFetch(letterEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => null);
-        throw new Error(errJson?.error?.message || 'Không thể tải tệp thư cảm ơn từ máy chủ.');
-      }
-      const svgText = await response.text();
-      if (!svgText.includes('<svg')) {
-        throw new Error('Dữ liệu thư cảm ơn trả về từ máy chủ không hợp lệ.');
-      }
-
-      // Loại bỏ @import url bên ngoài để tránh trình duyệt chặn cross-origin / tainted canvas
-      const cleanSvgText = svgText.replace(/@import\s+url\([^)]+\);?/gi, '').trim();
-      const svgBlob = new Blob([cleanSvgText], { type: 'image/svg+xml;charset=utf-8' });
-      const svgUrl = URL.createObjectURL(svgBlob);
-
-      try {
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        await new Promise<void>((resolve, reject) => {
-          image.onload = () => resolve();
-          image.onerror = () => reject(new Error('Trình duyệt không thể dựng hình từ SVG.'));
-          image.src = svgUrl;
-        });
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 1240;
-        canvas.height = 1754;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Không thể khởi tạo Canvas 2D.');
-
-        ctx.fillStyle = '#fffdf9';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(svgUrl);
-
-        const pngBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!pngBlob) throw new Error('Không thể tạo tệp PNG.');
-
-        // Kiểm tra hỗ trợ chia sẻ/lưu ảnh trực tiếp trên thiết bị di động (iOS / Android)
-        if (typeof navigator !== 'undefined' && navigator.canShare && typeof navigator.share === 'function') {
-          try {
-            const pngFile = new File([pngBlob], `Thu-Cam-On-${code}.png`, { type: 'image/png' });
-            if (navigator.canShare({ files: [pngFile] })) {
-              await navigator.share({
-                files: [pngFile],
-                title: 'Thư Cảm Ơn Kết Vòng',
-                text: `Thư cảm ơn đóng góp thiện nguyện dự án Kết Vòng (Mã ${code})`,
-              });
-              return;
-            }
-          } catch {
-            // Người dùng đóng menu share hoặc trình duyệt từ chối share file -> tiếp tục tải dạng file thông thường
-          }
-        }
-
-        const downloadUrl = URL.createObjectURL(pngBlob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `Thu-Cam-On-${code}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(downloadUrl), 2000);
-      } catch (canvasErr) {
-        console.warn('Lỗi kết xuất Canvas PNG, tự động chuyển sang tải file Vector SVG:', canvasErr);
-        // Fallback an toàn tuyệt đối: tải trực tiếp file SVG chất lượng cao
-        const rawBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-        const downloadUrl = URL.createObjectURL(rawBlob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `Thu-Cam-On-${code}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(downloadUrl), 2000);
-      }
-    } catch (error: any) {
-      setErrorMsg(error.message || 'Không thể tải thư cảm ơn. Vui lòng thử lại.');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const downloadLetterSvg = async () => {
-    if (!token) {
-      setErrorMsg('Thiếu liên kết bảo mật hợp lệ để tải thư cảm ơn.');
-      return;
-    }
-    setDownloading(true);
-    try {
-      const letterEndpoint = `${API_BASE}/receipts/${encodeURIComponent(code)}/letter`;
-      const response = await apiFetch(letterEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => null);
-        throw new Error(errJson?.error?.message || 'Không thể tải tệp thư cảm ơn từ máy chủ.');
-      }
-      const svgText = await response.text();
-      const rawBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-      const downloadUrl = URL.createObjectURL(rawBlob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `Thu-Cam-On-${code}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 2000);
-    } catch (error: any) {
-      setErrorMsg(error.message || 'Không thể tải thư cảm ơn. Vui lòng thử lại.');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
-      {/* Thanh điều hướng và hành động trên */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Nút quay lại trang chủ */}
+      <div className="flex items-center justify-between">
         <button
           onClick={() => navigate('/')}
           className="inline-flex items-center gap-2 text-xs font-bold text-[var(--kv-text-soft)] hover:text-[var(--kv-ink)] transition-colors min-h-touch font-display"
@@ -282,247 +176,18 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại trang chủ</span>
         </button>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={downloadLetterPng}
-            disabled={downloading}
-            className="kv-btn kv-btn--primary px-4 py-2.5 text-xs shadow-sm"
-            title="Lưu ảnh Thư Cảm Ơn dạng PNG độ phân giải cao"
-          >
-            <Download className="w-4 h-4" />
-            <span>{downloading ? 'Đang tạo ảnh…' : 'Lưu Thư Cảm Ơn (PNG)'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={downloadLetterSvg}
-            disabled={downloading}
-            className="kv-btn kv-btn--secondary px-4 py-2.5 text-xs shadow-xs"
-            title="Tải tệp vector SVG sắc nét dùng để in ấn"
-          >
-            <Download className="w-4 h-4 text-[var(--kv-ink)]" />
-            <span>Bản in (SVG)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="kv-btn kv-btn--secondary px-4 py-2.5 text-xs shadow-xs"
-          >
-            <Printer className="w-4 h-4 text-[var(--kv-ink)]" />
-            <span>In Thư</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-white hover:bg-[var(--kv-blue-bg)] border border-[var(--color-border)] text-[var(--kv-ink)] text-xs font-semibold transition-all min-h-touch font-display"
-            title="Chia sẻ hoặc sao chép liên kết thư cảm ơn"
-          >
-            {copiedType === 'link' ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4 text-[var(--kv-ink)]" />}
-            <span>{copiedType === 'link' ? 'Đã chép link' : 'Chia sẻ'}</span>
-          </button>
-        </div>
       </div>
 
-      {/* KHỐI THƯ CẢM ƠN THIẾT KẾ THEO TÔNG GIẤY KEM CRAYON */}
-      <div className="bg-[var(--kv-paper)] rounded-3xl border-2 border-[var(--color-border-strong)] shadow-lg p-6 sm:p-12 text-center relative overflow-hidden transition-all">
-        {/* Họa tiết hạt cườm 4 góc theo màu Crayon */}
-        <div className="absolute top-4 left-4 flex gap-1.5 opacity-80 pointer-events-none">
-          <span className="w-3 h-3 rounded-full bg-[var(--kv-pink)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-yellow)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-green)]" />
-          <span className="w-2 h-2 rounded-full bg-[var(--kv-ink)]" />
-        </div>
-        <div className="absolute top-4 right-4 flex gap-1.5 opacity-80 pointer-events-none">
-          <span className="w-2 h-2 rounded-full bg-[var(--kv-ink)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-green)]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-yellow)]" />
-          <span className="w-3 h-3 rounded-full bg-[var(--kv-pink)]" />
-        </div>
-
-        {/* Khung viền đứt nét thủ công bên trong */}
-        <div className="border border-dashed border-[var(--color-border-strong)] rounded-2xl p-6 sm:p-10 relative bg-white/80 backdrop-blur-[2px]">
-          {/* Băng dán phong cách Washi Tape */}
-          <div className="inline-flex items-center gap-2 px-6 py-1.5 rounded-full bg-[var(--kv-blue-bg)] border border-[var(--kv-blue-fg)]/20 shadow-xs text-[var(--kv-blue-fg)] font-display font-extrabold text-xs uppercase tracking-widest -mt-10 sm:-mt-14 mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Workshop Thiện Nguyện Kết Vòng</span>
-          </div>
-
-          {/* Biểu tượng trái tim hạt cườm */}
-          <div className="w-16 h-16 rounded-full bg-[var(--kv-pink-bg)] border-2 border-[var(--kv-pink)]/30 flex items-center justify-center mx-auto mb-3 shadow-sm">
-            <Heart className="w-8 h-8 text-[var(--kv-pink)] fill-[var(--kv-pink)] animate-pulse" />
-          </div>
-
-          {/* Tiêu đề thư cảm ơn */}
-          <h1 className="font-display font-black text-3xl sm:text-5xl text-[var(--kv-ink)] tracking-wide">
-            THƯ CẢM ƠN
-          </h1>
-          <p className="font-display font-bold text-xs sm:text-sm text-[var(--kv-text-soft)] tracking-[0.25em] uppercase mt-1 mx-auto text-center">
-            CHỨNG NHẬN ĐÓNG GÓP THIỆN NGUYỆN
-          </p>
-
-          {/* Dải phân cách hạt cườm */}
-          <div className="flex items-center justify-center gap-2 my-5">
-            <span className="h-0.5 w-16 sm:w-28 bg-[var(--color-border)]" />
-            <span className="w-2 h-2 rounded-full bg-[var(--kv-pink)]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-yellow)]" />
-            <span className="w-3 h-3 rounded-full bg-[var(--kv-ink)]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[var(--kv-green)]" />
-            <span className="w-2 h-2 rounded-full bg-[var(--kv-sky)]" />
-            <span className="h-0.5 w-16 sm:w-28 bg-[var(--color-border)]" />
-          </div>
-
-          {/* Vinh danh người ủng hộ */}
-          <div className="space-y-1 mb-5">
-            <p className="text-xs sm:text-sm font-bold text-[var(--kv-text-soft)] uppercase tracking-wider font-display mx-auto text-center">
-              Trân trọng tri ân tấm lòng vàng của
-            </p>
-            <h2 className="font-display font-black text-2xl sm:text-4xl text-[var(--kv-ink)]">
-              {receiptData.title} {receiptData.display_name}
-            </h2>
-          </div>
-
-          {/* Khung số tiền nổi bật */}
-          <div className="my-5 inline-block">
-            <div className="px-6 sm:px-10 py-3 sm:py-4 rounded-full bg-[var(--kv-pink)] text-white font-display font-black text-xl sm:text-3xl shadow-lg shadow-[var(--kv-pink)]/25 tracking-wide">
-              ĐÃ CHUNG TAY ỦNG HỘ {receiptData.amount.toLocaleString('vi-VN')} VNĐ
-            </div>
-            <p className="text-xs sm:text-sm font-bold text-[var(--color-number)] mt-2 font-display">
-              (Tương ứng {receiptData.quantity} chiếc vòng tay yêu thương gửi trao)
-            </p>
-          </div>
-
-          {/* Tag mã định danh và ngày */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 my-4 text-xs font-mono">
-            <span className="px-3.5 py-1.5 rounded-full bg-[var(--kv-paper)] border border-[var(--color-border)] text-[var(--kv-text)] font-bold">
-              MÃ ỦNG HỘ: <strong className="text-[var(--color-number)] font-extrabold">{receiptData.code}</strong>
-            </span>
-            <span className="px-3.5 py-1.5 rounded-full bg-[var(--kv-paper)] border border-[var(--color-border)] text-[var(--kv-text-soft)]">
-              NGÀY XÁC NHẬN: <strong>{dateStr}</strong>
-            </span>
-          </div>
-
-          {/* Nội dung thư cảm ơn */}
-          <div className="max-w-xl mx-auto my-6 text-sm sm:text-base leading-relaxed text-[var(--kv-text)] text-center font-body space-y-3">
-            <p>
-              Ban tổ chức Dự án Workshop Kết Vòng xin chân thành cảm ơn sự sẻ chia ấm áp và tấm lòng nhân ái của{' '}
-              <strong className="text-[var(--kv-ink)]">{receiptData.title} {receiptData.display_name}</strong>.
-            </p>
-            <p className="text-[var(--kv-text-soft)] text-xs sm:text-sm">
-              Mỗi chiếc vòng tay thủ công được xâu kết hôm nay là một nhịp cầu yêu thương gửi trao, góp phần mang đến niềm vui, nụ cười và thắp sáng niềm tin hy vọng cho các em nhỏ đang điều trị.
-            </p>
-          </div>
-
-          {/* Khẩu hiệu workshop */}
-          <div className="max-w-lg mx-auto p-3 sm:p-4 rounded-2xl bg-[var(--kv-paper)] border border-[var(--color-border)] text-[var(--kv-pink)] font-display italic font-bold text-xs sm:text-sm my-6">
-            “Mỗi hạt cườm gửi trao — Một nhịp cầu yêu thương kết nối”
-          </div>
-
-          {/* Phần chân thư: QR Code, Con dấu, Chữ ký */}
-          <div className="pt-6 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
-            {/* Khung QR Code */}
-            <div className="flex flex-col items-center">
-              <div className="p-2 rounded-2xl bg-[var(--kv-paper)] border border-[var(--color-border)] shadow-xs">
-                {receiptData.qr_svg ? (
-                  <div
-                    className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
-                    dangerouslySetInnerHTML={{ __html: receiptData.qr_svg }}
-                  />
-                ) : (
-                  <div className="w-24 h-24 flex items-center justify-center bg-white rounded-xl">
-                    <QrCode className="w-16 h-16 text-[var(--kv-text-soft)]" />
-                  </div>
-                )}
-              </div>
-              <span className="text-[11px] font-bold text-[var(--kv-ink)] uppercase tracking-wider mt-2 font-display">
-                Quét mã đối chiếu
-              </span>
-              <span className="text-[10px] text-[var(--kv-text-soft)] font-body">
-                Xác thực tại ketvong.vn
-              </span>
-            </div>
-
-            {/* Con dấu tròn đỏ chứng nhận đối soát */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-dashed border-red-500/80 p-1 flex items-center justify-center -rotate-6">
-                <div className="w-full h-full rounded-full border border-red-500/80 flex flex-col items-center justify-center text-red-600 bg-red-50/40">
-                  <span className="text-[8px] font-extrabold uppercase tracking-wider">Dự Án Kết Vòng</span>
-                  <div className="w-3.5 h-3.5 my-0.5 text-red-600">★</div>
-                  <span className="text-[9px] font-extrabold uppercase leading-tight">ĐÃ ĐỐI SOÁT</span>
-                  <span className="text-[7px] font-semibold text-red-500">NGHỊ ĐỊNH 93</span>
-                </div>
-              </div>
-              <span className="text-[10px] text-red-600 font-semibold mt-1 font-display">Đã kiểm toán minh bạch</span>
-            </div>
-
-            {/* Chữ ký Ban tổ chức */}
-            <div className="flex flex-col items-center sm:items-end text-center sm:text-right">
-              <span className="text-xs font-bold text-[var(--kv-ink)] uppercase tracking-wider font-display">
-                Đại diện Ban Tổ Chức
-              </span>
-              <span className="text-[11px] text-[var(--kv-text-soft)] italic mb-1 font-body">
-                Dự án Workshop Kết Vòng
-              </span>
-              {/* Chữ ký đồ họa cách điệu */}
-              <div className="h-10 flex items-center justify-center sm:justify-end my-1 opacity-80">
-                <svg width="120" height="36" viewBox="0 0 120 36" fill="none">
-                  <path d="M10 24 Q35 8 55 26 T95 18" stroke="#1F3F9E" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M25 30 Q50 16 85 28" stroke="#D81B7A" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </div>
-              <span className="font-display font-extrabold text-sm text-[var(--kv-ink)]">
-                Nguyễn Thanh Trúc
-              </span>
-              <span className="text-[11px] text-[var(--kv-text-soft)] font-body">
-                Trưởng Ban Tổ Chức Dự Án
-              </span>
-            </div>
-          </div>
-
-          {/* Dòng ghi chú chân thư */}
-          <div className="mt-8 pt-4 border-t border-[var(--color-border)] text-[11px] text-[var(--kv-text-soft)] space-y-1 font-body">
-            <p>Workshop Dự Án Sinh Viên SSG105 • Đại học FPT TP.HCM • Ngày tổ chức: 24/10/2026</p>
-            <p className="text-[10px]">
-              Tuân thủ quy chế vận động thiện nguyện Nghị định 93/2021/NĐ-CP &amp; Bảo vệ dữ liệu Nghị định 13/2023/NĐ-CP
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Thanh nút tải ảnh & in ấn tiện lợi ngay dưới Thư Cảm Ơn */}
-      <div className="flex flex-wrap items-center justify-center gap-3 py-1">
-        <button
-          type="button"
-          onClick={downloadLetterPng}
-          disabled={downloading}
-          className="kv-btn kv-btn--primary px-6 py-3 text-xs sm:text-sm shadow-md"
-        >
-          <Download className="w-4 h-4" />
-          <span>{downloading ? 'Đang tạo ảnh…' : 'Lưu Thư Cảm Ơn (Ảnh PNG)'}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={downloadLetterSvg}
-          disabled={downloading}
-          className="kv-btn kv-btn--secondary px-5 py-3 text-xs sm:text-sm shadow-xs"
-        >
-          <Download className="w-4 h-4 text-[var(--kv-ink)]" />
-          <span>Tải Vector (SVG)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="kv-btn kv-btn--secondary px-5 py-3 text-xs sm:text-sm shadow-xs"
-        >
-          <Printer className="w-4 h-4 text-[var(--kv-ink)]" />
-          <span>In Thư</span>
-        </button>
-      </div>
+      {/* KHỐI THƯ CẢM ƠN — MẪU THIẾT KẾ MỚI */}
+      <ThankYouLetterCard
+        code={receiptData.code}
+        title={receiptData.title}
+        displayName={receiptData.display_name}
+        amount={receiptData.amount}
+        quantity={receiptData.quantity}
+        dateStr={dateStr}
+        token={token}
+      />
 
       {/* BẢNG KÊ ĐỐI SOÁT & CHI TIẾT BIÊN NHẬN ĐIỆN TỬ */}
       <div className="bg-[var(--color-surface)] rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-sm space-y-5">
@@ -586,6 +251,49 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
             <span className="text-[var(--kv-text-soft)] block">Thời gian ghi nhận:</span>
             <span className="font-medium text-[var(--kv-text)] text-sm block">{dateStr}</span>
             <span className="text-[var(--kv-text-soft)] block">Trạng thái: Đã ghi nhận vào quỹ</span>
+          </div>
+        </div>
+
+        {/* Khung quét mã QR đối chiếu */}
+        <div className="p-4 rounded-2xl bg-[var(--kv-paper)] border border-[var(--color-border)] flex flex-col sm:flex-row items-center gap-4">
+          <a
+            href={receiptUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-xl bg-white border border-[var(--color-border)] shrink-0 shadow-xs hover:border-[var(--kv-ink)] transition-all block group"
+            title="Nhấp để mở liên kết hoặc quét bằng camera điện thoại"
+          >
+            {qrSvg ? (
+              <div
+                className="w-24 h-24 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+            ) : (
+              <div className="w-24 h-24 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-[var(--kv-pink)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </a>
+          <div className="text-center sm:text-left space-y-1.5 text-xs flex-1 min-w-0">
+            <h4 className="font-display font-bold text-sm text-[var(--kv-ink)]">
+              Mã QR Tra Cứu &amp; Đối Chiếu Minh Bạch
+            </h4>
+            <p className="text-[var(--kv-text-soft)] font-body">
+              Quét mã bằng camera điện thoại để xác thực hoặc{' '}
+              <a
+                href={receiptUrl || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--kv-blue-fg)] underline font-bold hover:text-[var(--kv-ink)]"
+              >
+                nhấp vào đây để mở trực tiếp
+              </a>.
+            </p>
+            {receiptUrl && (
+              <div className="text-[11px] font-mono text-neutral-600 truncate bg-white/80 px-2 py-1 rounded-md border border-[var(--color-border)] select-all" title={receiptUrl}>
+                {receiptUrl}
+              </div>
+            )}
           </div>
         </div>
 

@@ -398,20 +398,14 @@ export function renderThankYouHtml(
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#FBF6EE;border:2px solid #E8DCC8;border-radius:24px;box-shadow:0 8px 24px rgba(61,43,31,0.06);overflow:hidden;">
           <tr>
             <td style="padding:16px 14px 6px 14px;">
-              <!-- Hàng hạt cườm trang trí góc trên -->
+              <!-- Header Logos: FPT University & Kết Vòng -->
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="left" style="padding-left:4px;">
-                    <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background-color:#D81B7A;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:#E59E1A;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:#12A84B;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background-color:#1F3F9E;"></span>
+                  <td align="left" style="padding-left:8px;font-size:12px;font-weight:800;color:#0284c7;font-family:'Segoe UI',sans-serif;">
+                    <span style="color:#f26522;font-size:13px;">FPT</span> Education &bull; <span style="color:#0284c7;">FPT UNIVERSITY</span>
                   </td>
-                  <td align="right" style="padding-right:4px;">
-                    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background-color:#1F3F9E;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:#12A84B;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:#E59E1A;margin-right:3px;"></span>
-                    <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background-color:#D81B7A;"></span>
+                  <td align="right" style="padding-right:8px;font-size:12px;font-weight:800;color:#D81B7A;font-family:'Segoe UI',sans-serif;">
+                    Workshop <span style="color:#DE833A;">Kết Vòng</span>
                   </td>
                 </tr>
               </table>
@@ -419,174 +413,121 @@ export function renderThankYouHtml(
           </tr>
           <tr>
             <td style="padding:6px 14px 20px 14px;">
-              <!-- Khung giấy viền đứt nét thủ công bên trong -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:2px dashed #DCCBB5;border-radius:18px;text-align:center;">
+              <!-- Khung giấy viền thủ công bên trong -->
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:2px solid #EAE0D2;border-radius:18px;text-align:center;">
                 <tr>
                   <td style="padding:28px 20px 24px 20px;text-align:center;">
 
-                    <!-- Băng dán Washi Tape phong cách Workshop -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 14px auto;">
-                      <tr>
-                        <td style="background-color:#EAF0FF;border:1px solid #C5D7FE;border-radius:9999px;padding:6px 18px;color:#1F3F9E;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;">
-                          ✦ Workshop Thiện Nguyện Kết Vòng ✦
-                        </td>
-                      </tr>
-                    </table>
-
-                    <!-- Biểu tượng trái tim hạt cườm -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 12px auto;">
-                      <tr>
-                        <td align="center" valign="middle" style="width:52px;height:52px;background-color:#FDF0F6;border:2px solid #F9A8D4;border-radius:50%;text-align:center;">
-                          <span style="font-size:24px;color:#D81B7A;line-height:52px;display:inline-block;">&#10084;</span>
-                        </td>
-                      </tr>
-                    </table>
-
                     <!-- Tiêu đề Thư Cảm Ơn -->
-                    <h1 style="margin:0;font-size:30px;font-weight:900;color:#1F3F9E;letter-spacing:2px;text-transform:uppercase;font-family:'Segoe UI',Arial,sans-serif;">
+                    <h1 style="margin:0;font-size:28px;font-weight:900;color:#D81B7A;letter-spacing:2px;text-transform:uppercase;font-family:'Segoe UI',Arial,sans-serif;">
                       THƯ CẢM ƠN
                     </h1>
-                    <div style="margin:4px 0 0 0;font-size:11px;font-weight:800;color:#7A6A5E;letter-spacing:3px;text-transform:uppercase;">
+                    <div style="margin:4px 0 10px 0;font-size:12px;font-weight:800;color:#1F3F9E;letter-spacing:3px;text-transform:uppercase;">
                       CHỨNG NHẬN ĐÓNG GÓP THIỆN NGUYỆN
                     </div>
 
-                    <!-- Dải phân cách hạt cườm -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:16px auto;">
+                    <!-- 5 Bông hoa cúc pastel trang trí -->
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:8px auto 18px auto;">
                       <tr>
-                        <td valign="middle"><div style="height:1px;width:45px;background-color:#E8DCC8;"></div></td>
-                        <td valign="middle" style="padding:0 8px;">
-                          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background-color:#D81B7A;margin:0 2px;"></span>
-                          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:#E59E1A;margin:0 2px;"></span>
-                          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:#1F3F9E;margin:0 2px;"></span>
-                          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:#12A84B;margin:0 2px;"></span>
-                          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background-color:#1E88E5;margin:0 2px;"></span>
+                        <td align="center">
+                          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#BAE6FD;margin:0 3px;"></span>
+                          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#FBCFE8;margin:0 3px;"></span>
+                          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#FEF08A;margin:0 3px;"></span>
+                          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#DDD6FE;margin:0 3px;"></span>
+                          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#F472B6;margin:0 3px;"></span>
                         </td>
-                        <td valign="middle"><div style="height:1px;width:45px;background-color:#E8DCC8;"></div></td>
                       </tr>
                     </table>
 
                     <!-- Tri ân người ủng hộ -->
-                    <div style="font-size:11px;font-weight:700;color:#7A6A5E;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">
-                      TRÂN TRỌNG TRI ÂN TẤM LÒNG VÀNG CỦA
+                    <div style="font-size:13px;font-weight:600;color:#6B5D52;margin-bottom:6px;">
+                      Trân trọng tri ân tấm lòng vàng của:
                     </div>
-                    <div style="font-size:26px;font-weight:900;color:#1F3F9E;line-height:1.3;margin-bottom:16px;">
+                    <div style="font-size:24px;font-weight:900;color:#DE833A;line-height:1.3;margin-bottom:14px;font-family:'Segoe UI',Arial,sans-serif;">
                       ${escapeHtml(donorName)}
                     </div>
 
-                    <!-- Khung số tiền đóng góp nổi bật (Pink Crayon Pill Badge) -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 6px auto;">
-                      <tr>
-                        <td style="background-color:#D81B7A;border-radius:9999px;padding:12px 24px;text-align:center;box-shadow:0 4px 12px rgba(216,27,122,0.2);">
-                          <span style="color:#FFFFFF;font-size:18px;font-weight:900;letter-spacing:0.5px;">
-                            ĐÃ CHUNG TAY ỦNG HỘ ${escapeHtml(amountStr)} VNĐ
-                          </span>
-                        </td>
-                      </tr>
-                    </table>
-                    <div style="font-size:13px;font-weight:700;color:#C9610A;margin-bottom:16px;">
-                      (Tương ứng ${escapeHtml(quantity)} chiếc vòng tay yêu thương gửi trao)
+                    <!-- Số tiền & quy mô đóng góp -->
+                    <div style="font-size:15px;color:#2c2520;margin-bottom:4px;">
+                      Đã chung tay ủng hộ <strong style="color:#DE833A;font-size:17px;">${escapeHtml(amountStr)} VNĐ</strong>
+                    </div>
+                    <div style="font-size:13px;color:#52473E;margin-bottom:14px;">
+                      (Tương ứng <strong style="color:#DE833A;">${escapeHtml(quantity)}</strong> chiếc vòng tay yêu thương gửi trao)
                     </div>
 
                     <!-- Tag Mã định danh và Ngày xác nhận -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 18px auto;">
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 20px auto;">
                       <tr>
-                        <td style="background-color:#FBF6EE;border:1px solid #E8DCC8;border-radius:9999px;padding:6px 14px;font-size:11px;color:#3D2B1F;font-family:'Consolas',monospace;font-weight:700;">
-                          MÃ ỦNG HỘ: <strong style="color:#C9610A;">${escapeHtml(code)}</strong>
-                        </td>
-                        <td style="width:8px;"></td>
-                        <td style="background-color:#FBF6EE;border:1px solid #E8DCC8;border-radius:9999px;padding:6px 14px;font-size:11px;color:#7A6A5E;">
-                          NGÀY: <strong>${escapeHtml(dateStr)}</strong>
+                        <td style="background-color:#FBF6EE;border:1px solid #E8DCC8;border-radius:9999px;padding:6px 16px;font-size:11px;color:#3D2B1F;font-family:'Consolas',monospace;">
+                          MÃ ỦNG HỘ: <strong>${escapeHtml(code)}</strong> &nbsp;&bull;&nbsp; NGÀY: <strong>${escapeHtml(dateStr)}</strong>
                         </td>
                       </tr>
                     </table>
 
-                    <!-- Nội dung thư cảm ơn -->
+                    <!-- Nội dung lời cảm ơn -->
                     <table align="center" border="0" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto 16px auto;">
                       <tr>
-                        <td style="text-align:center;">
-                          ${messageHtml}
+                        <td style="text-align:center;font-size:14px;color:#3D2B1F;line-height:1.7;">
+                          <p style="margin:0 0 8px 0;">Sự đóng góp của Bạn đã mang niềm vui đến các em.</p>
+                          <p style="margin:0;font-size:13px;color:#6B5D52;">Khoản đóng góp sẽ được dùng cho vật liệu thiết yếu, in ấn, đóng gói và tổ chức Workshop. Báo cáo tổng kết sẽ được gửi đến bạn sau chương trình.</p>
                         </td>
                       </tr>
                     </table>
 
                     <!-- Khẩu hiệu workshop -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;margin:0 auto 20px auto;">
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="max-width:440px;width:100%;margin:16px auto 22px auto;">
                       <tr>
-                        <td style="background-color:#FBF6EE;border:1px solid #E8DCC8;border-radius:12px;padding:12px 16px;text-align:center;color:#D81B7A;font-style:italic;font-weight:700;font-size:13px;">
-                          “Mỗi hạt cườm gửi trao — Một nhịp cầu yêu thương kết nối”
+                        <td style="background-color:#FFF5ED;border:1px solid #FCD9BD;border-radius:12px;padding:12px 16px;text-align:center;color:#DE833A;font-style:italic;font-weight:700;font-size:14px;">
+                          “Trao một vòng tay - Kết một yêu thương”
                         </td>
                       </tr>
                     </table>
 
-                    <!-- Nút bấm Call-To-Action xem biên nhận -->
-                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 10px auto;">
+                    <!-- Phần đại diện Ban tổ chức & Chữ ký -->
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 24px auto;">
                       <tr>
-                        <td style="background-color:#D81B7A;border-radius:9999px;text-align:center;box-shadow:0 4px 14px rgba(216,27,122,0.25);">
-                          <a href="${escapeHtml(receiptUrl)}" style="display:inline-block;padding:15px 32px;color:#FFFFFF;font-size:15px;font-weight:800;text-decoration:none;border-radius:9999px;letter-spacing:0.5px;">
-                            Xem Thư Cảm Ơn &amp; Biên Nhận Điện Tử
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-
-                    <!-- Đường link phụ phòng trường hợp email client chặn nút -->
-                    <div style="font-size:11px;color:#7A6A5E;margin:6px auto 20px auto;max-width:460px;word-break:break-all;line-height:1.5;">
-                      Nếu nút không mở được, bạn vui lòng copy liên kết bảo mật này:<br>
-                      <a href="${escapeHtml(receiptUrl)}" style="color:#1F3F9E;text-decoration:underline;">${escapeHtml(receiptUrl)}</a>
-                    </div>
-
-                    <!-- Đường phân cách chân thư -->
-                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:20px 0 16px 0;">
-                      <tr>
-                        <td style="border-top:1px solid #E8DCC8;height:1px;"></td>
-                      </tr>
-                    </table>
-
-                    <!-- Phần chân thư: Con dấu đỏ kiểm toán & Chữ ký Ban tổ chức -->
-                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <!-- Cột 1: Con dấu đỏ kiểm toán Nghị định 93 -->
-                        <td align="center" valign="middle" width="50%" style="padding:10px 8px;">
-                          <table align="center" border="0" cellpadding="0" cellspacing="0" style="width:104px;height:104px;border:2px dashed #DC2626;border-radius:50%;background-color:#FEF2F2;text-align:center;">
-                            <tr>
-                              <td align="center" valign="middle" style="padding:4px;">
-                                <div style="font-size:8px;font-weight:800;color:#DC2626;letter-spacing:0.5px;text-transform:uppercase;">DỰ ÁN KẾT VÒNG</div>
-                                <div style="font-size:10px;color:#DC2626;margin:1px 0;">★</div>
-                                <div style="font-size:9px;font-weight:800;color:#DC2626;letter-spacing:0.5px;text-transform:uppercase;line-height:1.1;">ĐÃ ĐỐI SOÁT</div>
-                                <div style="font-size:7px;font-weight:700;color:#DC2626;margin-top:1px;">NGHỊ ĐỊNH 93</div>
-                              </td>
-                            </tr>
-                          </table>
-                          <div style="font-size:10px;font-weight:700;color:#DC2626;margin-top:4px;">
-                            Đã kiểm toán minh bạch
-                          </div>
-                        </td>
-
-                        <!-- Cột 2: Đại diện Ban Tổ Chức & Chữ ký -->
-                        <td align="center" valign="middle" width="50%" style="padding:10px 8px;">
-                          <div style="font-size:11px;font-weight:700;color:#1F3F9E;letter-spacing:1px;text-transform:uppercase;">
+                        <td align="center">
+                          <div style="font-size:11px;font-weight:800;color:#D84315;letter-spacing:1px;text-transform:uppercase;">
                             ĐẠI DIỆN BAN TỔ CHỨC
                           </div>
-                          <div style="font-size:10px;color:#7A6A5E;font-style:italic;margin-top:2px;">
+                          <div style="font-size:10px;color:#7A6A5E;margin-top:2px;">
                             Dự án Workshop Kết Vòng
                           </div>
-                          <div style="font-family:'Brush Script MT','Segoe Script',cursive,sans-serif;font-size:26px;color:#1F3F9E;font-weight:700;margin:4px 0;line-height:1.2;">
+                          <div style="font-family:'Brush Script MT','Segoe Script',cursive,sans-serif;font-size:28px;color:#1F3F9E;font-weight:700;margin:6px 0 2px 0;line-height:1.2;">
                             Thanh Trúc
                           </div>
                           <div style="font-size:13px;font-weight:800;color:#1F3F9E;">
                             Nguyễn Thanh Trúc
                           </div>
                           <div style="font-size:10px;color:#7A6A5E;margin-top:2px;">
-                            Trưởng Ban Tổ Chức Dự Án
+                            Trưởng Ban tổ chức dự án
                           </div>
                         </td>
                       </tr>
                     </table>
 
+                    <!-- Nút bấm Call-To-Action xem biên nhận trực tuyến -->
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto 10px auto;">
+                      <tr>
+                        <td style="background-color:#D81B7A;border-radius:9999px;text-align:center;box-shadow:0 4px 14px rgba(216,27,122,0.25);">
+                          <a href="${escapeHtml(receiptUrl)}" style="display:inline-block;padding:14px 32px;color:#FFFFFF;font-size:14px;font-weight:800;text-decoration:none;border-radius:9999px;letter-spacing:0.5px;">
+                            Mở Thư Cảm Ơn &amp; Biên Nhận Trực Tuyến
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Đường link phụ -->
+                    <div style="font-size:11px;color:#7A6A5E;margin:6px auto 16px auto;max-width:460px;word-break:break-all;line-height:1.5;">
+                      Nếu nút không mở được, bạn vui lòng mở liên kết này:<br>
+                      <a href="${escapeHtml(receiptUrl)}" style="color:#1F3F9E;text-decoration:underline;">${escapeHtml(receiptUrl)}</a>
+                    </div>
+
                     <!-- Dòng pháp lý & Thông tin sự kiện -->
-                    <div style="margin-top:20px;padding-top:14px;border-top:1px solid #E8DCC8;font-size:10px;color:#7A6A5E;line-height:1.5;">
-                      <div style="margin-bottom:3px;">Workshop Dự Án Sinh Viên SSG105 • Đại học FPT TP.HCM • Ngày tổ chức: 24/10/2026</div>
-                      <div>Tuân thủ quy chế vận động thiện nguyện Nghị định 93/2021/NĐ-CP &amp; Bảo vệ dữ liệu cá nhân Nghị định 13/2023/NĐ-CP</div>
+                    <div style="margin-top:20px;padding-top:14px;border-top:1px solid #E8DCC8;font-size:10px;color:#7A6A5E;line-height:1.6;">
+                      <div>Dự Án Sinh Viên SSG105 • Đại học FPT TP.HCM • Ngày tổ chức: 24/10/2026</div>
+                      <div>Liên Hệ: vongtayganket2026@gmail.com - Fanpage Kết Vòng</div>
+                      <div style="margin-top:4px;color:#948577;">Thông tin cá nhân của Bạn chỉ dùng để xác nhận đóng góp và được bảo mật theo quy định của pháp luật hiện hành (Nghị định 13/2023/NĐ-CP).</div>
                     </div>
 
                   </td>

@@ -1,3 +1,5 @@
+import { API_BASE } from '../api';
+
 export interface SheetExpenseItem {
   id: number;
   stt: number;
@@ -273,8 +275,7 @@ export async function fetchSheetLedger(sheetUrl?: string, forceRefresh = false):
 
   // 2. Thử fetch qua endpoint proxy backend
   try {
-    const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
-    const res = await fetch(`${apiBase}/api/v1/fund/sheet-ledger`);
+    const res = await fetch(`${API_BASE}/fund/sheet-ledger`);
     if (res.ok) {
       const json = await res.json();
       if (json.data?.rawCsv) {
