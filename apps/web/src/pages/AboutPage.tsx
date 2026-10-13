@@ -85,7 +85,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
               An toàn chuẩn vệ sinh nơi lưu trú
             </h3>
             <p className="text-xs sm:text-sm text-[var(--kv-text-soft)] leading-relaxed font-body">
-              Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của nơi lưu trú (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
+              Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của nơi lưu trú.
             </p>
           </div>
 

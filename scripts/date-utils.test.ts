@@ -34,3 +34,4 @@ test('Date Utils: formatDate formats day/month/year', () => {
   assert.equal(formatDate(null), '-');
   assert.equal(formatDate(undefined), '-');
 });
+

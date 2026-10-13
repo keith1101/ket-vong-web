@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   generateBankingDeeplink,
   getBankByBinOrCode,
+  isBankAutofillSupported,
   VIETNAM_BANKS,
   isMobileBrowser,
 } from '../apps/web/src/utils/banking.ts';
@@ -80,25 +81,54 @@ test('Banking Registry: lookups by BIN, code, and appCode return valid bank reco
   const mb = getBankByBinOrCode('970422');
   assert.equal(mb?.code, 'MB');
   assert.equal(mb?.appCode, 'mb');
+  assert.equal(mb?.supportsAutofill, true);
 
   const vcb = getBankByBinOrCode('VCB');
   assert.equal(vcb?.bin, '970436');
   assert.equal(vcb?.appCode, 'vcb');
+  assert.equal(vcb?.supportsAutofill, false);
+
+  const vba = getBankByBinOrCode('vba');
+  assert.equal(vba?.code, 'VBA');
+  assert.equal(vba?.supportsAutofill, false);
 
   const tcb = getBankByBinOrCode('tcb');
   assert.equal(tcb?.code, 'TCB');
+  assert.equal(tcb?.supportsAutofill, false);
 
   const momo = getBankByBinOrCode('momo');
   assert.equal(momo?.code, 'MOMO');
   assert.equal(momo?.appCode, 'momo');
   assert.equal(momo?.shortName, 'Ví MoMo');
   assert.equal(momo?.logo, '/images/banks/momo.png');
+  assert.equal(momo?.supportsAutofill, false);
 
   const momoByCode = getBankByBinOrCode('MOMO');
   assert.equal(momoByCode?.appCode, 'momo');
 
   const unknown = getBankByBinOrCode('UNKNOWN');
   assert.equal(unknown, undefined);
+});
+
+test('Banking Registry: isBankAutofillSupported identifies direct autofill vs QR scan banks', () => {
+  // Ngân hàng hỗ trợ Autofill trực tiếp
+  assert.equal(isBankAutofillSupported('mb'), true);
+  assert.equal(isBankAutofillSupported('970422'), true);
+  assert.equal(isBankAutofillSupported('icb'), true);
+  assert.equal(isBankAutofillSupported('bidv'), true);
+  assert.equal(isBankAutofillSupported('acb'), true);
+  assert.equal(isBankAutofillSupported('ocb'), true);
+
+  // Ngân hàng và ví cần quét QR (không hỗ trợ web autofill)
+  assert.equal(isBankAutofillSupported('vba'), false); // Agribank
+  assert.equal(isBankAutofillSupported('970405'), false); // Agribank BIN
+  assert.equal(isBankAutofillSupported('vcb'), false); // Vietcombank
+  assert.equal(isBankAutofillSupported('tcb'), false); // Techcombank
+  assert.equal(isBankAutofillSupported('vpb'), false); // VPBank
+  assert.equal(isBankAutofillSupported('tpb'), false); // TPBank
+  assert.equal(isBankAutofillSupported('momo'), false); // MoMo
+  assert.equal(isBankAutofillSupported(null), false);
+  assert.equal(isBankAutofillSupported(undefined), false);
 });
 
 test('isMobileBrowser: returns boolean in node environment', () => {

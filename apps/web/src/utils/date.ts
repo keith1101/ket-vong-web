@@ -39,3 +39,4 @@ export function formatDate(
 
   return `${day}/${month}/${year}`;
 }
+

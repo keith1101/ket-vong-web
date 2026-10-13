@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Heart,
   ArrowRight,
+  Download,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { fetchPaymentStatus } from '../api';
@@ -24,6 +25,7 @@ import {
   generateBankingDeeplink,
   isMobileBrowser,
   getBankByBinOrCode,
+  isBankAutofillSupported,
 } from '../utils/banking';
 
 export interface BankAppPaymentModalProps {
@@ -63,22 +65,45 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
   const bankDisplay = payment.bankName || matchedBank?.shortName || matchedBank?.fullName || 'Ngân hàng nhận';
   const accountNumber = payment.accountNumber || '';
   const accountName = payment.accountName || 'DỰ ÁN KẾT VÒNG';
+  const selectedBank = VIETNAM_BANKS.find((b) => b.appCode === selectedBankApp);
+
+  // Ưu tiên chuỗi VietQR EMVCo từ PayOS nếu có, ngược lại dùng VietQR QuickLink
+  const qrPayload =
+    payment.qrCode && payment.qrCode.length > 20
+      ? payment.qrCode
+      : generateBankingDeeplink({
+          accountNumber,
+          bankBinOrCode: bankBin,
+          amount: payment.amount,
+          memo: payment.code,
+          accountName,
+        });
+
+  const handleDownloadQrImage = async () => {
+    try {
+      const dataUrl = await QRCode.toDataURL(qrPayload, {
+        width: 600,
+        margin: 2,
+        color: {
+          dark: '#162E78',
+          light: '#ffffff',
+        },
+      });
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `vietqr-${payment.code}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setCheckMessage('Đã tải ảnh mã VietQR về máy! Bạn hãy mở app ngân hàng > chọn "Quét QR từ Thư viện ảnh".');
+    } catch (err) {
+      console.warn('[PaymentModal] Lỗi tải ảnh QR:', err);
+    }
+  };
 
   // Sinh mã QR SVG hiển thị sắc nét với gam màu Deep Ink đồng bộ thương hiệu
   useEffect(() => {
     if (!isOpen) return;
-
-    // Ưu tiên chuỗi VietQR EMVCo từ PayOS nếu có, ngược lại dùng VietQR QuickLink
-    const qrPayload =
-      payment.qrCode && payment.qrCode.length > 20
-        ? payment.qrCode
-        : generateBankingDeeplink({
-            accountNumber,
-            bankBinOrCode: bankBin,
-            amount: payment.amount,
-            memo: payment.code,
-            accountName,
-          });
 
     QRCode.toString(qrPayload, {
       type: 'svg',
@@ -91,7 +116,7 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
     })
       .then((svg) => setQrSvg(svg))
       .catch((err) => console.warn('[PaymentModal] Lỗi sinh mã QR:', err));
-  }, [isOpen, payment, accountNumber, bankBin, accountName]);
+  }, [isOpen, qrPayload]);
 
   // Cơ chế Tự Động Lắng Nghe Kết Quả Realtime (Polling mỗi 3 giây)
   useEffect(() => {
@@ -147,16 +172,20 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
     const targetApp = appCode || selectedBankApp || defaultAppCode;
     setSelectedBankApp(targetApp);
 
-    if (targetApp === 'momo') {
-      // Tự động sao chép mã nội dung chuyển khoản để người dùng tiện dán vào MoMo
-      if (payment.code) {
-        copyToClipboard(payment.code, 'memo');
-      }
+    const targetBank = VIETNAM_BANKS.find((b) => b.appCode === targetApp);
+    const supportsAutofill = Boolean(targetBank?.supportsAutofill);
 
-      // Nếu trên mobile, tự động mở rộng hiển thị mã QR để tiện chụp màn hình quét ảnh
+    // Đối với các ngân hàng không hỗ trợ Autofill (như Agribank, Vietcombank, Techcombank, MoMo...):
+    // Tự động sao chép mã đối soát để người dùng tiện dán hoặc đối chiếu
+    if (!supportsAutofill && payment.code) {
+      copyToClipboard(payment.code, 'memo');
       if (isMobile) {
         setShowQrOnMobile(true);
-      } else {
+      }
+    }
+
+    if (targetApp === 'momo') {
+      if (!isMobile) {
         // Trên desktop: Không gọi momo:// vì PC không có app MoMo, thông báo hướng dẫn quét QR trên màn hình
         setCheckMessage('Đã sao chép mã đối soát! Bạn đang ở máy tính: vui lòng mở app MoMo trên điện thoại và quét mã VietQR bên dưới.');
         return;
@@ -268,11 +297,16 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                       Mở app MoMo để <strong>quét mã VietQR</strong> bên dưới hoặc chọn <strong>Chuyển tiền đến ngân hàng</strong>. Mã nội dung{' '}
                       <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> đã được tự động sao chép để dán.
                     </>
+                  ) : selectedBank?.supportsAutofill ? (
+                    <>
+                      ⚡ <strong>Hỗ trợ tự động điền 100%!</strong> Mở app {selectedBank.shortName}, hệ thống sẽ kẹp sẵn số tài khoản, số tiền và nội dung{' '}
+                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> vào lệnh chuyển tiền.
+                    </>
                   ) : (
                     <>
-                      Không cần tải ảnh hay quét mã! Thông tin số tài khoản, số tiền và nội dung{' '}
-                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> sẽ được{' '}
-                      <strong>tự động điền sẵn 100%</strong> vào app ngân hàng của bạn.
+                      📷 <strong>App {selectedBank?.shortName || 'ngân hàng'} yêu cầu quét QR:</strong> Do chính sách an ninh của ngân hàng, ứng dụng không cho phép web ngoài điền lệnh chuyển trực tiếp. Hãy{' '}
+                      <strong>lưu ảnh mã QR bên dưới</strong> &gt; mở app chọn <strong>'Quét QR từ Thư viện ảnh'</strong> (hoặc dán mã đối soát{' '}
+                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> đã được sao chép sẵn).
                     </>
                   )}
                 </p>
@@ -289,7 +323,9 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
               <span>
                 {selectedBankApp === 'momo' && !isMobile
                   ? 'QUÉT MÃ VÍ MOMO (TRÊN ĐIỆN THOẠI)'
-                  : `MỞ APP ${VIETNAM_BANKS.find((b) => b.appCode === selectedBankApp)?.shortName?.toUpperCase() || 'NGÂN HÀNG'}`}
+                  : selectedBank?.supportsAutofill
+                  ? `MỞ APP ${selectedBank.shortName.toUpperCase()} (TỰ ĐỘNG ĐIỀN 100%)`
+                  : `MỞ APP ${selectedBank?.shortName?.toUpperCase() || 'NGÂN HÀNG'} & QUÉT QR`}
               </span>
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -326,6 +362,45 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                       type="button"
                       onClick={() => setShowQrOnMobile(true)}
                       className="text-[var(--kv-pink)] hover:underline font-bold font-display"
+                    >
+                      Hiện mã QR để chụp màn hình
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Hướng dẫn chuyển tiền dành riêng cho các ngân hàng yêu cầu quét QR (Agribank, Vietcombank, Techcombank...) */}
+            {selectedBankApp !== 'momo' && !selectedBank?.supportsAutofill && (
+              <div className="p-3.5 rounded-2xl bg-[#FFF8EE] border border-[#F6AD55]/60 text-xs space-y-2 shadow-2xs">
+                <div className="flex items-center gap-1.5 font-bold text-[#C05621] font-display">
+                  <span>💡 Hướng dẫn chuyển tiền bằng {selectedBank?.shortName || 'ngân hàng'}:</span>
+                </div>
+                <p className="text-[var(--kv-text)] font-body text-[11px] sm:text-xs leading-relaxed">
+                  Ứng dụng <strong>{selectedBank?.shortName || 'này'}</strong> tăng cường bảo mật nên chỉ mở màn hình chính (chưa hỗ trợ web tự động điền lệnh chuyển). Để kẹp thông tin chuẩn xác nhất:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-[var(--kv-text)] font-body text-[11px] sm:text-xs">
+                  <li>
+                    <strong>Cách 1 (Quét QR tiện nhất):</strong> Bấm nút <strong>Lưu mã QR</strong> bên dưới, sau đó mở app {selectedBank?.shortName} &gt; chọn <strong>Quét mã QR từ Thư viện ảnh</strong>.
+                  </li>
+                  <li>
+                    <strong>Cách 2 (Chuyển khoản thường):</strong> Mở app &gt; chuyển đến <strong>{bankDisplay}</strong>, STK <code className="font-mono font-bold bg-white px-1 rounded">{accountNumber}</code> và dán nội dung <code className="font-mono font-bold bg-white px-1 text-[var(--color-number)] rounded">{payment.code}</code> (hệ thống đã sao chép sẵn).
+                  </li>
+                </ul>
+                <div className="pt-1 flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleDownloadQrImage}
+                    className="px-3.5 py-1.5 rounded-xl bg-[var(--kv-orange)] text-white hover:bg-orange-600 font-display font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Lưu Mã QR Vào Máy</span>
+                  </button>
+                  {isMobile && !showQrOnMobile && (
+                    <button
+                      type="button"
+                      onClick={() => setShowQrOnMobile(true)}
+                      className="text-[var(--kv-pink)] hover:underline font-bold font-display text-[11px]"
                     >
                       Hiện mã QR để chụp màn hình
                     </button>
@@ -371,8 +446,14 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                       >
                         {bank.shortName}
                       </span>
-                      <span className="text-[9px] text-[var(--kv-text-soft)] font-hand">
-                        {isSelected ? 'Đang chọn' : 'Mở app'}
+                      <span
+                        className={`text-[9px] font-bold font-display px-1.5 py-0.5 rounded-md mt-0.5 ${
+                          bank.supportsAutofill
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {bank.supportsAutofill ? '⚡ Tự điền' : '📷 Quét QR'}
                       </span>
                     </button>
                   );
@@ -415,9 +496,19 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                       Đang tạo mã QR…
                     </div>
                   )}
-                  <span className="kv-pill bg-[var(--kv-green-bg)] text-[var(--kv-green-fg)] text-[10px] font-bold mt-2.5">
-                    Quét bằng app ngân hàng hoặc Ví MoMo
-                  </span>
+                  <div className="mt-2.5 flex flex-col items-center gap-1.5 w-full">
+                    <button
+                      type="button"
+                      onClick={handleDownloadQrImage}
+                      className="w-full py-1.5 px-3 rounded-xl bg-[var(--kv-pink-bg)] hover:bg-[var(--kv-pink)] hover:text-white text-[var(--kv-pink-fg)] text-[11px] font-bold font-display flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 border border-[var(--kv-pink)]/30"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Lưu mã QR về máy để quét</span>
+                    </button>
+                    <span className="kv-pill bg-[var(--kv-green-bg)] text-[var(--kv-green-fg)] text-[10px] font-bold">
+                      Quét bằng app ngân hàng hoặc Ví MoMo
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5 text-xs text-[var(--kv-text)] max-w-xs text-center sm:text-left">
