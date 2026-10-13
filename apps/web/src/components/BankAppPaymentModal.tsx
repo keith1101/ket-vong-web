@@ -61,7 +61,17 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
   const bankBin = payment.bin || '970422'; // Mặc định MB Bank nếu chưa có
   const matchedBank = getBankByBinOrCode(bankBin);
   const defaultAppCode = matchedBank?.appCode || 'mb';
-  const [selectedBankApp, setSelectedBankApp] = useState<string>(defaultAppCode);
+  const [selectedBankApp, setSelectedBankApp] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage.getItem('ketvong:preferred-bank-app');
+        if (saved && VIETNAM_BANKS.some((b) => b.appCode === saved)) {
+          return saved;
+        }
+      } catch {}
+    }
+    return defaultAppCode;
+  });
   const bankDisplay = payment.bankName || matchedBank?.shortName || matchedBank?.fullName || 'Ngân hàng nhận';
   const accountNumber = payment.accountNumber || '';
   const accountName = payment.accountName || 'DỰ ÁN KẾT VÒNG';
@@ -171,6 +181,11 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
   const openBankDeeplink = (appCode?: string) => {
     const targetApp = appCode || selectedBankApp || defaultAppCode;
     setSelectedBankApp(targetApp);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('ketvong:preferred-bank-app', targetApp);
+      } catch {}
+    }
 
     const targetBank = VIETNAM_BANKS.find((b) => b.appCode === targetApp);
     const supportsAutofill = Boolean(targetBank?.supportsAutofill);
@@ -179,9 +194,6 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
     // Tự động sao chép mã đối soát để người dùng tiện dán hoặc đối chiếu
     if (!supportsAutofill && payment.code) {
       copyToClipboard(payment.code, 'memo');
-      if (isMobile) {
-        setShowQrOnMobile(true);
-      }
     }
 
     if (targetApp === 'momo') {
@@ -294,18 +306,18 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                 <p className="text-xs text-[var(--kv-text)] font-body mt-1 leading-relaxed">
                   {selectedBankApp === 'momo' ? (
                     <>
-                      Mở app MoMo để <strong>quét mã VietQR</strong> bên dưới hoặc chọn <strong>Chuyển tiền đến ngân hàng</strong>. Mã nội dung{' '}
-                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> đã được tự động sao chép để dán.
+                      Mở app MoMo để <strong>quét mã VietQR</strong> hoặc chọn <strong>Chuyển tiền đến ngân hàng</strong>. Bạn có thể bấm <strong>"Lưu Mã QR Vào Máy"</strong> bên dưới để quét từ Album ảnh, mã nội dung{' '}
+                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> đã được sao chép sẵn.
                     </>
                   ) : selectedBank?.supportsAutofill ? (
                     <>
-                      ⚡ <strong>Hỗ trợ tự động điền 100%!</strong> Mở app {selectedBank.shortName}, hệ thống sẽ kẹp sẵn số tài khoản, số tiền và nội dung{' '}
-                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> vào lệnh chuyển tiền.
+                      ⚡ <strong>Hỗ trợ tự động điền 100%!</strong> Mở app {selectedBank.shortName}, hệ thống sẽ kẹp sẵn STK, số tiền và nội dung{' '}
+                      <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> vào lệnh chuyển tiền. (Bạn cũng có thể tải mã QR bên dưới để quét nếu muốn).
                     </>
                   ) : (
                     <>
-                      📷 <strong>App {selectedBank?.shortName || 'ngân hàng'} yêu cầu quét QR:</strong> Do chính sách an ninh của ngân hàng, ứng dụng không cho phép web ngoài điền lệnh chuyển trực tiếp. Hãy{' '}
-                      <strong>lưu ảnh mã QR bên dưới</strong> &gt; mở app chọn <strong>'Quét QR từ Thư viện ảnh'</strong> (hoặc dán mã đối soát{' '}
+                      📷 <strong>App {selectedBank?.shortName || 'ngân hàng'} chỉ mở app (không tự điền):</strong> Do chính sách an ninh của ngân hàng, ứng dụng không cho phép web ngoài tự điền lệnh chuyển trực tiếp. Hãy bấm{' '}
+                      <strong>"Lưu Mã QR Vào Máy"</strong> &gt; mở app chọn <strong>'Quét QR từ Thư viện ảnh'</strong> (mã đối soát{' '}
                       <strong className="font-mono text-[var(--color-number)]">{payment.code}</strong> đã được sao chép sẵn).
                     </>
                   )}
@@ -313,22 +325,34 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
               </div>
             </div>
 
-            {/* Nút bấm thông minh mở ứng dụng */}
-            <button
-              type="button"
-              onClick={() => openBankDeeplink(selectedBankApp)}
-              className="w-full py-4 px-5 rounded-2xl bg-[var(--kv-pink)] hover:bg-[var(--kv-pink-hover)] text-white font-display font-black text-sm sm:text-base shadow-md shadow-pink-600/20 hover:shadow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2.5"
-            >
-              <Sparkles className="w-5 h-5 fill-white text-white animate-pulse" />
-              <span>
-                {selectedBankApp === 'momo' && !isMobile
-                  ? 'QUÉT MÃ VÍ MOMO (TRÊN ĐIỆN THOẠI)'
-                  : selectedBank?.supportsAutofill
-                  ? `MỞ APP ${selectedBank.shortName.toUpperCase()} (TỰ ĐỘNG ĐIỀN 100%)`
-                  : `MỞ APP ${selectedBank?.shortName?.toUpperCase() || 'NGÂN HÀNG'} & QUÉT QR`}
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* Hàng nút hành động chính: Mở App + Luôn có nút Lưu Mã QR */}
+            <div className="grid sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => openBankDeeplink(selectedBankApp)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[var(--kv-pink)] hover:bg-[var(--kv-pink-hover)] text-white font-display font-black text-sm shadow-md shadow-pink-600/20 hover:shadow-lg active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 fill-white text-white shrink-0" />
+                <span className="truncate">
+                  {selectedBankApp === 'momo' && !isMobile
+                    ? 'QUÉT VÍ MOMO (TRÊN ĐT)'
+                    : selectedBank?.supportsAutofill
+                    ? `MỞ APP ${selectedBank.shortName.toUpperCase()} (TỰ ĐIỀN)`
+                    : `MỞ APP ${selectedBank?.shortName?.toUpperCase() || 'NGÂN HÀNG'}`}
+                </span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadQrImage}
+                className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-[#FFF7ED] text-[var(--kv-orange)] border-2 border-[var(--kv-orange)] font-display font-black text-sm shadow-xs active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                title="Tải ảnh mã VietQR để mở app chọn 'Quét QR từ Album ảnh'"
+              >
+                <Download className="w-4 h-4 shrink-0 text-[var(--kv-orange)]" />
+                <span>LƯU MÃ QR VÀO MÁY</span>
+              </button>
+            </div>
 
             {/* Hướng dẫn chuyển tiền dành riêng cho Ví MoMo */}
             {selectedBankApp === 'momo' && (
@@ -338,10 +362,7 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                 </div>
                 <ul className="list-disc list-inside space-y-1.5 text-[var(--kv-text)] font-body text-[11px] sm:text-xs">
                   <li>
-                    <strong>Cách 1 (Quét mã VietQR):</strong>{' '}
-                    {isMobile
-                      ? 'Chụp ảnh màn hình mã VietQR bên dưới > Mở app MoMo > Chọn Quét mã > Chọn ảnh từ Album/Thư viện.'
-                      : 'Mở app MoMo trên điện thoại > Chọn Quét mã > Quét mã VietQR trên màn hình máy tính.'}
+                    <strong>Cách 1 (Quét mã VietQR):</strong> Bấm nút <strong>Lưu Mã QR Vào Máy</strong> &gt; Mở app MoMo &gt; Chọn Quét mã &gt; Chọn ảnh từ Album/Thư viện.
                   </li>
                   <li>
                     <strong>Cách 2 (Chuyển khoản đến Ngân hàng 24/7):</strong> Mở app MoMo &gt; Chọn <strong>Chuyển tiền đến Ngân hàng</strong> &gt; Chọn <strong>{bankDisplay}</strong> &gt; Nhập STK <code className="font-mono font-bold bg-white px-1 rounded">{accountNumber}</code> &gt; Dán nội dung <code className="font-mono font-bold bg-white px-1 text-[var(--color-number)] rounded">{payment.code}</code> (hệ thống đã tự động sao chép).
@@ -357,15 +378,6 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                     <ExternalLink className="w-3 h-3" />
                     <span>Tải ứng dụng MoMo (App Store / Google Play)</span>
                   </a>
-                  {isMobile && !showQrOnMobile && (
-                    <button
-                      type="button"
-                      onClick={() => setShowQrOnMobile(true)}
-                      className="text-[var(--kv-pink)] hover:underline font-bold font-display"
-                    >
-                      Hiện mã QR để chụp màn hình
-                    </button>
-                  )}
                 </div>
               </div>
             )}
@@ -381,41 +393,26 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-[var(--kv-text)] font-body text-[11px] sm:text-xs">
                   <li>
-                    <strong>Cách 1 (Quét QR tiện nhất):</strong> Bấm nút <strong>Lưu mã QR</strong> bên dưới, sau đó mở app {selectedBank?.shortName} &gt; chọn <strong>Quét mã QR từ Thư viện ảnh</strong>.
+                    <strong>Cách 1 (Quét QR tiện nhất):</strong> Bấm nút <strong>Lưu Mã QR Vào Máy</strong> ở trên &gt; mở app {selectedBank?.shortName} &gt; chọn <strong>Quét mã QR từ Thư viện ảnh</strong>.
                   </li>
                   <li>
                     <strong>Cách 2 (Chuyển khoản thường):</strong> Mở app &gt; chuyển đến <strong>{bankDisplay}</strong>, STK <code className="font-mono font-bold bg-white px-1 rounded">{accountNumber}</code> và dán nội dung <code className="font-mono font-bold bg-white px-1 text-[var(--color-number)] rounded">{payment.code}</code> (hệ thống đã sao chép sẵn).
                   </li>
                 </ul>
-                <div className="pt-1 flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleDownloadQrImage}
-                    className="px-3.5 py-1.5 rounded-xl bg-[var(--kv-orange)] text-white hover:bg-orange-600 font-display font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Lưu Mã QR Vào Máy</span>
-                  </button>
-                  {isMobile && !showQrOnMobile && (
-                    <button
-                      type="button"
-                      onClick={() => setShowQrOnMobile(true)}
-                      className="text-[var(--kv-pink)] hover:underline font-bold font-display text-[11px]"
-                    >
-                      Hiện mã QR để chụp màn hình
-                    </button>
-                  )}
-                </div>
               </div>
             )}
 
             {/* Lưới chọn nhanh ngân hàng phổ biến (Quick Bank Selector) */}
             <div className="pt-1">
-              <div className="flex items-center gap-2 mb-2.5">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="kv-dot bg-[var(--kv-orange)]" />
                 <p className="text-xs font-bold text-[var(--kv-ink)] uppercase tracking-wider font-display">
-                  Hoặc bấm trực tiếp vào app bạn đang cài:
+                  Chọn ứng dụng ngân hàng hoặc ví bạn đang dùng:
                 </p>
+              </div>
+
+              <div className="mb-2.5 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 font-body leading-relaxed">
+                💡 <strong>Lưu ý:</strong> Tự động điền sẵn thông tin chỉ hỗ trợ trên một số ngân hàng có nhãn <strong className="text-green-700 bg-green-100 px-1 rounded font-bold">⚡ Tự điền</strong> (MB, VietinBank, BIDV, ACB, OCB). Các ngân hàng còn lại có nhãn <strong className="text-amber-800 bg-amber-100 px-1 rounded font-bold">📷 Quét QR</strong> yêu cầu bấm <strong>"Lưu Mã QR Vào Máy"</strong> để quét từ Thư viện ảnh.
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-2.5">
@@ -462,78 +459,70 @@ export const BankAppPaymentModal: React.FC<BankAppPaymentModalProps> = ({
             </div>
           </div>
 
-          {/* KHỐI MÃ VIETQR VECTOR THÔNG MINH */}
+          {/* KHỐI MÃ VIETQR VECTOR THÔNG MINH - LUÔN HIỂN THỊ */}
           <div className="bg-[var(--kv-paper)] rounded-3xl border border-[var(--color-border)] p-4 sm:p-6 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <QrCode className="w-4 h-4 text-[var(--kv-ink)]" />
                 <span className="font-display font-bold text-xs sm:text-sm text-[var(--kv-ink)]">
-                  Mã VietQR Quét Nhanh Bằng Camera / App
+                  Mã VietQR Quét Nhanh Bằng Camera / App Ngân Hàng
                 </span>
               </div>
-              {isMobile && (
-                <button
-                  type="button"
-                  onClick={() => setShowQrOnMobile(!showQrOnMobile)}
-                  className="kv-pill bg-white text-[var(--kv-pink)] border border-[var(--color-border)] text-xs font-bold flex items-center gap-1 font-display hover:bg-[var(--kv-pink-bg)] transition-colors"
-                >
-                  <span>{showQrOnMobile ? 'Thu gọn mã QR' : 'Hiện mã QR để quét'}</span>
-                  {showQrOnMobile ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
-              )}
+              <span className="kv-pill bg-[var(--kv-green-bg)] text-[var(--kv-green-fg)] text-[10px] font-bold">
+                Tương thích 100% ngân hàng & Ví MoMo
+              </span>
             </div>
 
-            {(!isMobile || showQrOnMobile) && (
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-6">
-                <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-[var(--color-border-strong)] shadow-xs flex flex-col items-center shrink-0">
-                  {qrSvg ? (
-                    <div
-                      className="w-48 h-48 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
-                      dangerouslySetInnerHTML={{ __html: qrSvg }}
-                    />
-                  ) : (
-                    <div className="w-48 h-48 flex items-center justify-center text-xs text-gray-400 font-display">
-                      Đang tạo mã QR…
-                    </div>
-                  )}
-                  <div className="mt-2.5 flex flex-col items-center gap-1.5 w-full">
-                    <button
-                      type="button"
-                      onClick={handleDownloadQrImage}
-                      className="w-full py-1.5 px-3 rounded-xl bg-[var(--kv-pink-bg)] hover:bg-[var(--kv-pink)] hover:text-white text-[var(--kv-pink-fg)] text-[11px] font-bold font-display flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 border border-[var(--kv-pink)]/30"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Lưu mã QR về máy để quét</span>
-                    </button>
-                    <span className="kv-pill bg-[var(--kv-green-bg)] text-[var(--kv-green-fg)] text-[10px] font-bold">
-                      Quét bằng app ngân hàng hoặc Ví MoMo
-                    </span>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-6">
+              <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-[var(--color-border-strong)] shadow-xs flex flex-col items-center shrink-0">
+                {qrSvg ? (
+                  <div
+                    className="w-48 h-48 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  />
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center text-xs text-gray-400 font-display">
+                    Đang tạo mã QR…
                   </div>
-                </div>
-
-                <div className="space-y-2.5 text-xs text-[var(--kv-text)] max-w-xs text-center sm:text-left">
-                  <p className="font-bold text-[var(--kv-ink)] font-display text-sm">
-                    📱 Nếu bạn đang dùng máy tính:
-                  </p>
-                  <p className="leading-relaxed font-body">
-                    Chỉ cần mở camera điện thoại hoặc ứng dụng ngân hàng quét mã trực tiếp trên màn hình máy tính. <strong>Không cần tải ảnh về máy.</strong>
-                  </p>
-                  {payment.checkoutUrl && (
-                    <div className="pt-1">
-                      <a
-                        href={payment.checkoutUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--kv-pink)] hover:underline font-display"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Mở cổng ủng hộ PayOS</span>
-                      </a>
-                    </div>
-                  )}
+                )}
+                <div className="mt-2.5 flex flex-col items-center gap-1.5 w-full">
+                  <button
+                    type="button"
+                    onClick={handleDownloadQrImage}
+                    className="w-full py-2 px-3 rounded-xl bg-[var(--kv-orange)] hover:bg-orange-600 text-white text-xs font-bold font-display flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Lưu mã QR về máy để quét</span>
+                  </button>
+                  <span className="text-[10px] text-[var(--kv-text-soft)] font-body text-center">
+                    Mở app ngân hàng &gt; chọn "Quét QR từ Album"
+                  </span>
                 </div>
               </div>
-            )}
+
+              <div className="space-y-2.5 text-xs text-[var(--kv-text)] max-w-xs text-center sm:text-left">
+                <p className="font-bold text-[var(--kv-ink)] font-display text-sm">
+                  📱 Quét mã QR trực tiếp:
+                </p>
+                <p className="leading-relaxed font-body">
+                  - <strong>Trên máy tính:</strong> Mở app ngân hàng bất kỳ trên điện thoại quét trực tiếp mã QR trên màn hình.<br />
+                  - <strong>Trên điện thoại:</strong> Bấm <strong>Lưu mã QR về máy</strong>, sau đó mở app ngân hàng chọn <strong>Quét QR từ Thư viện ảnh</strong> (Mã đối soát đã được sao chép sẵn).
+                </p>
+                {payment.checkoutUrl && (
+                  <div className="pt-1">
+                    <a
+                      href={payment.checkoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--kv-pink)] hover:underline font-display"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Mở cổng ủng hộ PayOS</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* KHỐI THÔNG TIN CHUYỂN KHOẢN CHI TIẾT (COPY 1-CLICK) */}
