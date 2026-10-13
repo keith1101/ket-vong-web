@@ -91,7 +91,7 @@ export const AdminLogsPage: React.FC = () => {
                     <td className="py-2.5 px-3 font-semibold">{l.admin_name}</td>
                     <td className="py-2.5 px-3 font-mono font-bold text-brand-orange">{l.action}</td>
                     <td className="py-2.5 px-3 font-mono">{l.target}</td>
-                    <td className="py-2.5 px-3 text-brand-textMuted">{l.details || '—'}</td>
+                    <td className="py-2.5 px-3 text-brand-textMuted">{l.details || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -125,7 +125,7 @@ export const AdminLogsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-brand-textMuted">
-                      {l.error_message || l.message_id || '—'}
+                      {l.error_message || l.message_id || '-'}
                       {l.status === 'failed' && <button onClick={() => resendEmail(l.id).catch((e) => alert(e.message))} className="ml-2 text-brand-orange font-bold hover:underline">Gửi lại</button>}
                     </td>
                   </tr>

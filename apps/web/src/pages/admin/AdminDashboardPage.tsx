@@ -203,7 +203,7 @@ export const AdminDashboardPage: React.FC = () => {
                         {new Date(d.created_at).toLocaleDateString('vi-VN')}
                       </td>
                       <td className="py-3 px-3 font-mono text-[11px] text-brand-textMuted">
-                        {d.provider_reference || d.provider_order_code || '—'}
+                        {d.provider_reference || d.provider_order_code || '-'}
                       </td>
                       <td className="py-3 px-3 text-right">
                         {d.status === 'manual_review' && (

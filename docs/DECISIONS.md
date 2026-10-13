@@ -1,5 +1,5 @@
 # NHẬT KÝ QUYẾT ĐỊNH KỸ THUẬT (DECISIONS.MD)
-## Website Kết Vòng — Quyên góp tự động qua SePay
+## Website Kết Vòng - Quyên góp tự động qua SePay
 
 Tài liệu ghi nhận các quyết định kiến trúc và kỹ thuật tuân thủ quy tắc: *Chỗ nào SRS im lặng: chọn phương án đơn giản nhất phù hợp với SRS và ghi vào `DECISIONS.md` (ngày, vấn đề, lựa chọn, lý do).*
 

@@ -1,11 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, AlertCircle, CheckCircle2, Copy, ShieldCheck, Sparkles, Heart } from 'lucide-react';
+import {
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  Copy,
+  ShieldCheck,
+  Sparkles,
+  Heart,
+  Clock,
+  RotateCcw,
+} from 'lucide-react';
 import { fetchFundSummary, submitDonation } from '../api';
-import type { FundSummary } from '../types';
+import type { FundSummary, PaymentIntentData } from '../types';
+import { BankAppPaymentModal } from '../components/BankAppPaymentModal';
 
 interface DonatePageProps {
   navigate: (path: string, state?: any) => void;
 }
+
+export interface PendingDonationSession {
+  donationCode: string;
+  orderCode: number;
+  statusToken?: string;
+  amount: number;
+  quantity: number;
+  displayName: string;
+  title: string;
+  email?: string;
+  phone?: string;
+  isAnonymous?: boolean;
+  message?: string;
+  payment: PaymentIntentData;
+  createdAt: number;
+}
+
+const PENDING_STORAGE_KEY = 'ketvong:active-pending-donation';
+
+const getPendingSession = (): PendingDonationSession | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(PENDING_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: PendingDonationSession = JSON.parse(raw);
+    // Hết hạn sau 15 phút (900.000 ms) theo vòng đời tiêu chuẩn của link PayOS
+    if (!parsed.createdAt || Date.now() - parsed.createdAt > 15 * 60 * 1000) {
+      window.sessionStorage.removeItem(PENDING_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const savePendingSession = (session: PendingDonationSession) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(session));
+  } catch {}
+};
+
+const clearPendingSession = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(PENDING_STORAGE_KEY);
+  } catch {}
+};
 
 export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
@@ -23,14 +83,32 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [successCode, setSuccessCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [activePayment, setActivePayment] = useState<PaymentIntentData | null>(null);
+  const [pendingSession, setPendingSession] = useState<PendingDonationSession | null>(null);
 
+  // Tải thông tin quỹ và khôi phục đơn đang chờ thanh toán nếu có
   useEffect(() => {
     fetchFundSummary()
       .then((data) => {
         setSummary(data);
         const preset = data.presets?.[0] || 1;
-        setQuantity(preset);
-        setCustomQuantity(String(preset));
+        
+        // Kiểm tra xem có đơn cũ chưa thanh toán trong vòng 15 phút không
+        const existing = getPendingSession();
+        if (existing) {
+          setPendingSession(existing);
+          setQuantity(existing.quantity);
+          setCustomQuantity(String(existing.quantity));
+          if (existing.displayName) setDisplayName(existing.displayName);
+          if (existing.title) setTitle(existing.title);
+          if (existing.email) setEmail(existing.email);
+          if (existing.phone) setPhone(existing.phone);
+          if (existing.message) setMessage(existing.message);
+          if (typeof existing.isAnonymous === 'boolean') setIsAnonymous(existing.isAnonymous);
+        } else {
+          setQuantity(preset);
+          setCustomQuantity(String(preset));
+        }
       })
       .catch(() => setError('Không thể tải thông tin chiến dịch. Vui lòng thử lại sau.'));
   }, []);
@@ -67,6 +145,29 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Hủy phiên đơn chờ cũ để bắt đầu tạo đơn hoàn toàn mới
+  const handleDiscardPending = () => {
+    clearPendingSession();
+    setPendingSession(null);
+    setActivePayment(null);
+    setSuccessCode(null);
+  };
+
+  // Mở lại popup thanh toán của đơn đang chờ
+  const handleResumePending = () => {
+    if (!pendingSession) return;
+    setSuccessCode(pendingSession.donationCode);
+    setActivePayment(pendingSession.payment);
+  };
+
+  // Kiểm tra xem đơn hiện tại có trùng với đơn đang chờ trong session không
+  const isPendingReusable = Boolean(
+    pendingSession &&
+    pendingSession.quantity === quantity &&
+    pendingSession.amount === amount &&
+    pendingSession.displayName.trim().toLowerCase() === displayName.trim().toLowerCase()
+  );
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -90,6 +191,22 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
       return;
     }
 
+    // 1. TÁI SỬ DỤNG MÃ ĐÃ TẠO (SMART SESSION REUSE)
+    // Nếu đơn cũ có cùng số tiền và tên người ủng hộ -> Mở lại ngay popup cũ, không gọi API tạo mã mới!
+    const existing = getPendingSession();
+    if (
+      existing &&
+      existing.quantity === quantity &&
+      existing.amount === amount &&
+      existing.displayName.trim().toLowerCase() === displayName.trim().toLowerCase()
+    ) {
+      setSuccessCode(existing.donationCode);
+      setActivePayment(existing.payment);
+      setPendingSession(existing);
+      return;
+    }
+
+    // 2. TẠO MÃ MỚI QUA API KHI THÔNG TIN THAY ĐỔI HOẶC CHƯA CÓ ĐƠN NÀO
     setSubmitting(true);
     try {
       const result = await submitDonation({
@@ -109,7 +226,53 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
         if (result.statusToken && result.payment?.orderCode) {
           window.localStorage.setItem(`ketvong:payment-status:${result.payment.orderCode}`, result.statusToken);
         }
-        // Nếu có checkoutUrl từ cổng, chuyển hướng hoặc điều hướng sang trang kết quả
+
+        // Trường hợp đã được duyệt trước (bypass mode)
+        if (result.donation.status === 'approved') {
+          clearPendingSession();
+          navigate(`/thanh-toan/ket-qua?orderCode=${result.payment?.orderCode || result.donation.code}`);
+          return;
+        }
+
+        // Mở Màn hình Thanh toán Deeplink ngân hàng & Ví MoMo
+        if (result.payment) {
+          const paymentData: PaymentIntentData = {
+            orderCode: result.payment.orderCode,
+            paymentLinkId: result.payment.paymentLinkId,
+            checkoutUrl: result.payment.checkoutUrl,
+            qrCode: result.payment.qrCode,
+            bin: result.payment.bin || summary?.bank_bin || '970422',
+            bankName: result.payment.bankName || summary?.bank_name,
+            accountNumber: result.payment.accountNumber || summary?.bank_account_number,
+            accountName: result.payment.accountName || summary?.bank_account_name,
+            amount,
+            code: result.donation.code,
+            expiresAt: result.payment.expiresAt,
+          };
+
+          const newSession: PendingDonationSession = {
+            donationCode: result.donation.code,
+            orderCode: result.payment.orderCode,
+            statusToken: result.statusToken,
+            amount,
+            quantity,
+            displayName: displayName.trim(),
+            title,
+            email: email.trim(),
+            phone: phone.trim(),
+            isAnonymous,
+            message: message.trim(),
+            payment: paymentData,
+            createdAt: Date.now(),
+          };
+
+          savePendingSession(newSession);
+          setPendingSession(newSession);
+          setActivePayment(paymentData);
+          return;
+        }
+
+        // Fallback: nếu không có đối tượng payment chi tiết thì chuyển hướng checkoutUrl
         if (result.payment?.checkoutUrl) {
           window.location.assign(result.payment.checkoutUrl);
         }
@@ -123,8 +286,9 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <div className="text-center mb-8 space-y-2">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
+      {/* Tiêu đề trang */}
+      <div className="text-center space-y-2">
         <div className="kv-pill bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 font-display">
           <Heart className="w-3.5 h-3.5 fill-[var(--kv-pink)] text-[var(--kv-pink)]" />
           <span>{summary?.campaign_name || 'Ủng hộ Kết Vòng'}</span>
@@ -135,18 +299,52 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
         <p className="text-sm text-[var(--kv-text-soft)] font-body max-w-xl mx-auto text-center">
           Điền thông tin và hoàn tất ủng hộ an toàn qua PayOS.
         </p>
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={() => navigate('/thanh-toan/ket-qua')}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--kv-orange-bg)] text-[var(--kv-orange-fg)] text-xs font-bold font-display hover:opacity-80 transition-opacity"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Xem trước mẫu Thư Cảm Ơn (Bản thử nghiệm)</span>
-          </button>
-        </div>
       </div>
 
+      {/* BANNER THÔNG BÁO ĐƠN CHỜ THANH TOÁN (KHI ĐÃ TẠO MÃ NHƯNG CHƯA HOÀN TẤT) */}
+      {pendingSession && !activePayment && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50/70 border-2 border-dashed border-[var(--kv-orange)]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[var(--kv-orange)] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-display font-black text-sm sm:text-base text-[var(--kv-ink)]">
+                  Bạn đang có đơn ủng hộ chưa thanh toán
+                </span>
+                <code className="text-xs font-mono font-black text-[var(--kv-orange)] bg-white px-2.5 py-0.5 rounded-lg border border-[var(--color-border)] shadow-2xs">
+                  {pendingSession.donationCode}
+                </code>
+              </div>
+              <p className="text-xs text-[var(--kv-text-soft)] font-body mt-0.5">
+                Số tiền: <strong className="text-[var(--color-number)] font-display font-bold">{pendingSession.amount.toLocaleString('vi-VN')}đ</strong> ({pendingSession.quantity} chiếc vòng) • Đã tạo lúc {new Date(pendingSession.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={handleResumePending}
+              className="kv-btn kv-btn--primary text-xs py-2 px-4 shadow-xs"
+            >
+              <span>Mở lại thanh toán</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardPending}
+              className="text-xs font-bold text-[var(--kv-text-soft)] hover:text-red-600 px-2.5 py-1.5 transition-colors font-display flex items-center gap-1"
+              title="Hủy đơn này để tạo mã mới hoàn toàn"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Hủy & Tạo mới</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Form quyên góp */}
       <form onSubmit={handleSubmit} className="bg-[var(--color-surface)] rounded-3xl border-2 border-[var(--color-border-strong)] shadow-sm p-6 sm:p-10 space-y-6">
         {/* Lựa chọn số lượng vòng */}
         <div>
@@ -236,9 +434,6 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
               className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-strong)] text-sm bg-white focus:outline-none focus:border-[var(--kv-ink)]"
               placeholder="email@example.com"
             />
-            <p className="text-[11px] text-[var(--kv-text-soft)] mt-1 font-body">
-              Điền email nếu bạn muốn nhận biên nhận điện tử &amp; thư cảm ơn qua hòm thư.
-            </p>
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1 text-[var(--kv-text)] font-display">
@@ -249,14 +444,14 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-strong)] text-sm bg-white focus:outline-none focus:border-[var(--kv-ink)]"
-              placeholder="09xx xxx xxx"
+              placeholder="0912345678"
             />
           </div>
         </div>
 
         <div>
           <label className="block text-xs font-semibold mb-1 text-[var(--kv-text)] font-display">
-            Lời chúc / Lời nhắn gửi workshop (không bắt buộc)
+            Lời chúc / Lời nhắn gửi đến các em nhỏ (công khai nếu không ẩn danh)
           </label>
           <textarea
             rows={3}
@@ -329,7 +524,14 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
           disabled={submitting || !summary || !consent || quantity <= 0 || Boolean(quantityError)}
           className="w-full kv-btn kv-btn--primary py-4 text-base font-bold shadow-md disabled:opacity-50"
         >
-          {submitting ? 'Đang tạo mã ủng hộ…' : (
+          {submitting ? (
+            'Đang xử lý đơn ủng hộ…'
+          ) : isPendingReusable ? (
+            <>
+              <span>Tiếp tục thanh toán mã {pendingSession?.donationCode} ({amount.toLocaleString('vi-VN')}đ)</span>
+              <ArrowRight className="w-5 h-5" />
+            </>
+          ) : (
             <>
               <span>Ủng hộ {amount.toLocaleString('vi-VN')}đ</span>
               <ArrowRight className="w-5 h-5" />
@@ -342,6 +544,26 @@ export const DonatePage: React.FC<DonatePageProps> = ({ navigate }) => {
           <span>Hệ thống ghi nhận ủng hộ tự động minh bạch qua PayOS.</span>
         </p>
       </form>
+
+      {/* POPUP THANH TOÁN DEEPLINK & VIETQR */}
+      {activePayment && (
+        <BankAppPaymentModal
+          isOpen={Boolean(activePayment)}
+          onClose={() => setActivePayment(null)}
+          payment={activePayment}
+          donorName={displayName.trim() || pendingSession?.displayName || 'Nhà hảo tâm'}
+          donorTitle={title || pendingSession?.title}
+          quantity={quantity}
+          onNewDonation={handleDiscardPending}
+          onPaymentSuccess={(approvedData) => {
+            const orderCode = approvedData?.orderCode || activePayment.orderCode;
+            clearPendingSession();
+            setPendingSession(null);
+            setActivePayment(null);
+            navigate(`/thanh-toan/ket-qua?orderCode=${orderCode}`);
+          }}
+        />
+      )}
     </div>
   );
 };

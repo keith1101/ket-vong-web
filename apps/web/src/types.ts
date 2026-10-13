@@ -16,7 +16,22 @@ export interface FundSummary {
   bank_account_number: string;
   bank_account_name: string;
   bank_qr_image: string;
+  bank_bin?: string;
   google_sheet_url?: string;
+}
+
+export interface PaymentIntentData {
+  orderCode: number;
+  paymentLinkId?: string;
+  checkoutUrl?: string;
+  qrCode?: string;
+  bin?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  amount: number;
+  code: string;
+  expiresAt?: string;
 }
 
 export interface PublicDonationItem {

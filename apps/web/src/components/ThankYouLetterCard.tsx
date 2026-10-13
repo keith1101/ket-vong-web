@@ -168,7 +168,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Thư Cảm Ơn — Dự Án Workshop Kết Vòng',
+          title: 'Thư Cảm Ơn - Dự Án Workshop Kết Vòng',
           text: `Tôi vừa đồng hành ủng hộ ${quantity} chiếc vòng tay cùng các em nhỏ tại Workshop Kết Vòng!`,
           url: currentUrl,
         });
@@ -186,7 +186,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* KHUNG THƯ CẢM ƠN — KHỚP 100% MẪU THIẾT KẾ MỚI */}
+      {/* KHUNG THƯ CẢM ƠN - KHỚP 100% MẪU THIẾT KẾ MỚI */}
       <div className="relative mx-auto max-w-xl sm:max-w-2xl rounded-3xl shadow-xl overflow-hidden border border-[#E8DCC8] bg-[#FAF6EE] select-none">
         {/* Khung bao tỷ lệ 723 / 1024 */}
         <div className="relative w-full aspect-[723/1024]" style={{ containerType: 'inline-size' }}>
@@ -199,7 +199,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
 
           {/* CÁC TRƯỜNG DỮ LIỆU ĐỘNG ĐIỀN VÀO CÁC Ô TRỐNG CỦA PHÔI */}
           <div className="absolute inset-0 pointer-events-auto">
-            {/* 1. Tên người hảo tâm — bold orange, căn giữa tuyệt đối */}
+            {/* 1. Tên người hảo tâm - bold orange, căn giữa tuyệt đối */}
             <div
               className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] text-center flex items-center justify-center"
               style={{ top: '33.4%' }}
@@ -212,7 +212,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
               </h2>
             </div>
 
-            {/* 2. Giá trị số tiền — điền tiếp sau chữ "Đã chung tay ủng hộ" */}
+            {/* 2. Giá trị số tiền - điền tiếp sau chữ "Đã chung tay ủng hộ" */}
             <span
               className="absolute font-display font-bold text-[#DE833A] leading-none whitespace-nowrap -translate-y-1/2"
               style={{
@@ -224,7 +224,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
               {formattedAmount}
             </span>
 
-            {/* 3. Số lượng vòng — điền vào khe giữa "(Tương ứng " và " chiếc vòng..." */}
+            {/* 3. Số lượng vòng - điền vào khe giữa "(Tương ứng " và " chiếc vòng..." */}
             <span
               className="absolute font-display font-bold text-[#DE833A] leading-none text-center -translate-x-1/2 -translate-y-1/2 whitespace-nowrap"
               style={{
@@ -236,7 +236,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
               {quantity}
             </span>
 
-            {/* 4. Mã ủng hộ (9 ký tự KV-XXXXXX) — điền sau "Mã ủng hộ: " */}
+            {/* 4. Mã ủng hộ (9 ký tự KV-XXXXXX) - điền sau "Mã ủng hộ: " */}
             <span
               className="absolute font-display font-semibold text-[#2c2520] leading-none whitespace-nowrap -translate-y-1/2"
               style={{
@@ -248,7 +248,7 @@ export const ThankYouLetterCard: React.FC<ThankYouLetterCardProps> = ({
               {code}
             </span>
 
-            {/* 5. Ngày (DD/MM/YYYY) — điền sau "Ngày: " */}
+            {/* 5. Ngày (DD/MM/YYYY) - điền sau "Ngày: " */}
             <span
               className="absolute font-display font-semibold text-[#2c2520] leading-none whitespace-nowrap -translate-y-1/2"
               style={{

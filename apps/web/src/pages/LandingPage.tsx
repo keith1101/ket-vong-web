@@ -55,8 +55,8 @@ const WORKSHOP_PHOTOS = [
   {
     src: '/images/workshop-banner.jpg',
     badge: 'Nhóm Tình · FPT University',
-    title: 'Dự án thiện nguyện Kết Vòng — Nhóm Tình FPT University',
-    desc: 'Trao một vòng tay, kết một yêu thương — thông điệp lan tỏa tình yêu thương và sự sẻ chia của cộng đồng sinh viên.',
+    title: 'Dự án thiện nguyện Kết Vòng - Nhóm Tình FPT University',
+    desc: 'Trao một vòng tay, kết một yêu thương - thông điệp lan tỏa tình yêu thương và sự sẻ chia của cộng đồng sinh viên.',
   },
 ];
 
@@ -117,7 +117,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
                 alt="Logo Dự án Thiện nguyện Kết Vòng"
                 className="w-full max-w-[320px] sm:max-w-[420px] md:max-w-[480px] h-auto object-contain mx-auto hover:scale-105 transition-transform duration-300 drop-shadow-sm select-none"
               />
-              <h1 className="sr-only">Kết Vòng — Trao một vòng tay, kết một yêu thương</h1>
+              <h1 className="sr-only">Kết Vòng - Trao một vòng tay, kết một yêu thương</h1>
             </div>
           </div>
 
@@ -126,7 +126,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
           </p>
 
           <p className="text-base sm:text-lg text-[var(--kv-text)] leading-relaxed max-w-2xl mx-auto font-body">
-            Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6–15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.
+            Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6-15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.
           </p>
 
           {/* Cặp nút hành động theo Theme Crayon Rainbow */}
@@ -197,7 +197,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
 
             <div className="pt-4 lg:pt-0">
               <span className="block font-display font-extrabold text-2xl sm:text-4xl text-[var(--color-number)]">
-                20–30
+                20-30
               </span>
               <span className="text-xs sm:text-sm font-semibold text-[var(--kv-text-soft)] mt-1 block">
                 bệnh nhi tham gia workshop
@@ -263,7 +263,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
                 Giải pháp
               </h3>
               <p className="text-sm text-[var(--kv-text)]/90 leading-relaxed font-body">
-                Một workshop xâu vòng tay hạt cườm ngay tại Ngôi nhà chung Ba Thùy, nơi các em tạm trú để điều trị. Các em tự chọn màu, tự tay làm vòng cho mình hoặc tặng bố mẹ, người chăm sóc, bạn bè — vừa sáng tạo vừa xả stress, an toàn, phù hợp với không gian lưu trú của các em.
+                Một workshop xâu vòng tay hạt cườm ngay tại Ngôi nhà chung Ba Thùy, nơi các em tạm trú để điều trị. Các em tự chọn màu, tự tay làm vòng cho mình hoặc tặng bố mẹ, người chăm sóc, bạn bè - vừa sáng tạo vừa xả stress, an toàn, phù hợp với không gian lưu trú của các em.
               </p>
             </div>
           </div>
@@ -278,7 +278,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
                 Kết quả mong đợi
               </h3>
               <p className="text-sm text-[var(--kv-text)]/90 leading-relaxed font-body">
-                Ít nhất 20 bệnh nhi có một buổi sáng đầy tiếng cười, mỗi em mang về 1–2 chiếc vòng tay do chính tay mình làm.
+                Ít nhất 20 bệnh nhi có một buổi sáng đầy tiếng cười, mỗi em mang về 1-2 chiếc vòng tay do chính tay mình làm.
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
                 <p className="text-white text-xs sm:text-sm font-semibold leading-relaxed font-body">
-                  💛 Nụ cười hồn nhiên của các em tại Ngôi nhà chung Ba Thùy — động lực lớn nhất của nhóm Tình.
+                  💛 Nụ cười hồn nhiên của các em tại Ngôi nhà chung Ba Thùy - động lực lớn nhất của nhóm Tình.
                 </p>
               </div>
             </div>
@@ -613,7 +613,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
                 Nhóm Tình · FPT University
               </h4>
               <p className="text-xs text-[var(--kv-text-soft)] line-clamp-2 font-body">
-                Trao một vòng tay, kết một yêu thương — tấm lòng của các bạn sinh viên gửi đến các em.
+                Trao một vòng tay, kết một yêu thương - tấm lòng của các bạn sinh viên gửi đến các em.
               </p>
             </div>
           </div>
@@ -692,7 +692,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
               Tự động ghi nhận tức thì
             </h3>
             <p className="text-sm text-[var(--kv-text-soft)] leading-relaxed font-body">
-              Hệ thống tự động duyệt trong 3 giây — tên bạn xuất hiện trên bảng minh bạch và thư cảm ơn kèm biên nhận gửi về hộp thư tức thì.
+              Hệ thống tự động duyệt trong 3 giây - tên bạn xuất hiện trên bảng minh bạch và thư cảm ơn kèm biên nhận gửi về hộp thư tức thì.
             </p>
           </div>
         </div>

@@ -24,17 +24,22 @@ export const PaymentResultPage: React.FC<PaymentResultPageProps> = ({ cancelled,
   useEffect(() => {
     if (cancelled) return;
     if (!orderCode) {
-      // Chế độ xem thử nghiệm Demo (không cần qua cổng thanh toán)
-      setStatus('approved');
-      setPaymentData({
-        code: 'KV-6889AB',
-        status: 'approved',
-        approved_at: '2026-10-24T10:00:00Z',
-        title: 'Bạn',
-        display_name: 'Bùi Anh Huy',
-        amount: 10000,
-        quantity: 1,
-      });
+      const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const isDevDemo = isLocalDev && new URLSearchParams(window.location.search).get('demo') === '1';
+      if (isDevDemo) {
+        setStatus('approved');
+        setPaymentData({
+          code: 'KV-6889AB',
+          status: 'approved',
+          approved_at: '2026-10-24T10:00:00Z',
+          title: 'Bạn',
+          display_name: 'Bùi Anh Huy',
+          amount: 10000,
+          quantity: 1,
+        });
+        return;
+      }
+      setStatus('missing_order');
       return;
     }
     let active = true;
@@ -53,6 +58,28 @@ export const PaymentResultPage: React.FC<PaymentResultPageProps> = ({ cancelled,
 
   const isApproved = status === 'approved';
   const isCancelled = status === 'cancelled' || status === 'expired' || status === 'unknown';
+
+  if (status === 'missing_order') {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="bg-[var(--color-surface)] rounded-3xl border-2 border-[var(--color-border-strong)] shadow-sm p-8 space-y-5">
+          <XCircle className="w-16 h-16 mx-auto text-[var(--kv-ink)]" />
+          <h1 className="font-display font-extrabold text-2xl text-[var(--kv-ink)]">
+            Không tìm thấy thông tin lượt ủng hộ
+          </h1>
+          <p className="text-sm text-[var(--kv-text-soft)] font-body max-w-md mx-auto text-center">
+            Vui lòng thực hiện ủng hộ trực tiếp qua cổng thanh toán hoặc kiểm tra lại đường dẫn.
+          </p>
+          <button
+            onClick={() => navigate('/ung-ho')}
+            className="kv-btn kv-btn--primary px-6 py-3 font-bold"
+          >
+            Đến trang ủng hộ
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Khi thanh toán thành công: Hiển thị Thư Cảm Ơn mới trực tiếp trên trang
   if (isApproved && paymentData) {

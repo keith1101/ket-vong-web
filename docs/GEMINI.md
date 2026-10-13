@@ -43,3 +43,12 @@ The agent is encouraged to run safe, read-only and standard workflow commands in
 - Build & test: `cmake --build`, `pytest`, `python -m unittest`, `ctest`.
 - Python execution within workspace: `python scripts/...`, `python -m ...`.
 
+---
+
+## 4. Git Branching & Development Workflow Policy (BẮT BUỘC)
+- **Mọi thay đổi đều phải phát triển trên branch mới**:
+  - Tuyệt đối **KHÔNG** commit hoặc phát triển code trực tiếp trên branch `main`.
+  - Mọi tính năng mới (feature), sửa lỗi (bugfix), tinh chỉnh UI hoặc refactor đều phải tạo một branch mới xuất phát từ `main` (quy ước đặt tên: `feature/...`, `fix/...`, `refactor/...`).
+  - Sau khi phát triển xong trên branch mới, phải chạy đầy đủ test suite (`node node_modules/tsx/dist/cli.mjs scripts/test.ts`) và kiểm thử trước khi tiến hành merge vào `main`.
+
+

@@ -2,7 +2,7 @@
   "name": "ketvong-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Website Kết Vòng — Quyên góp minh bạch tự động qua PayOS",
+  "description": "Website Kết Vòng - Quyên góp minh bạch tự động qua PayOS",
   "scripts": {
     "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"cyan,magenta\" \"tsx apps/api/src/index.ts\" \"node apps/web/node_modules/vite/bin/vite.js apps/web --port 3000\"",
     "build": "tsx scripts/build.ts",

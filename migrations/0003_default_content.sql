@@ -7,7 +7,7 @@ INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES
   ('campaign_target', '4000000', datetime('now')),
   ('contact_email', 'vongtayganket2006@gmail.com', datetime('now')),
   ('contact_phone', '0374519443', datetime('now')),
-  ('campaign_intro', 'Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6–15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.', datetime('now')),
+  ('campaign_intro', 'Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6-15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.', datetime('now')),
   ('privacy_policy', 'Chúng tôi cam kết bảo vệ dữ liệu cá nhân của người ủng hộ theo Nghị định 13/2023/NĐ-CP. Thông tin liên hệ chỉ dùng để đối chiếu khi cần thiết và không bao giờ công khai.', datetime('now')),
   ('google_sheet_url', 'https://docs.google.com/spreadsheets/d/12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M/edit?usp=sharing', datetime('now'));
 

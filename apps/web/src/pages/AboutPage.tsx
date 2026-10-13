@@ -41,7 +41,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
         </h1>
 
         <p className="text-base sm:text-lg text-[var(--kv-text)] leading-relaxed pt-2 font-body">
-          Kết Vòng là dự án workshop thiện nguyện của nhóm Tình, tổ chức hoạt động làm vòng tay thủ công cho bệnh nhi ung thư từ 6–15 tuổi đang điều trị nội trú, hiện tạm trú tại Ngôi nhà chung Ba Thùy.
+          Kết Vòng là dự án workshop thiện nguyện của nhóm Tình, tổ chức hoạt động làm vòng tay thủ công cho bệnh nhi ung thư từ 6-15 tuổi đang điều trị nội trú, hiện tạm trú tại Ngôi nhà chung Ba Thùy.
         </p>
 
         <p className="text-base text-[var(--kv-text-soft)] leading-relaxed font-body">
@@ -73,7 +73,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
               Sân chơi vừa sức &amp; tự chủ
             </h3>
             <p className="text-xs sm:text-sm text-[var(--kv-text-soft)] leading-relaxed font-body">
-              Trẻ 6–15 tuổi cần sân chơi vừa sức, được tôn trọng quyền tự chủ (tự chọn màu sắc, tự làm) thay vì chỉ nhận quà thụ động.
+              Trẻ 6-15 tuổi cần sân chơi vừa sức, được tôn trọng quyền tự chủ (tự chọn màu sắc, tự làm) thay vì chỉ nhận quà thụ động.
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
               An toàn chuẩn vệ sinh nơi lưu trú
             </h3>
             <p className="text-xs sm:text-sm text-[var(--kv-text-soft)] leading-relaxed font-body">
-              Hoạt động thủ công khô, sạch, không nhiệt, không bụi — đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của nơi lưu trú (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
+              Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của nơi lưu trú (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-[var(--kv-pink)] shrink-0 mt-0.5" />
-            <span>Mỗi em hoàn thành 1–2 chiếc vòng tay để đeo hoặc tặng bố mẹ, người chăm sóc, bạn bè.</span>
+            <span>Mỗi em hoàn thành 1-2 chiếc vòng tay để đeo hoặc tặng bố mẹ, người chăm sóc, bạn bè.</span>
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-[var(--kv-pink)] shrink-0 mt-0.5" />
@@ -265,7 +265,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
 
             <div className="p-4 rounded-2xl bg-[var(--kv-paper)] border border-[var(--color-border)] space-y-1">
               <strong className="text-[var(--kv-ink)] block font-bold font-display">👶 Đối tượng tham gia:</strong>
-              <p className="text-[var(--kv-text)]/90">Các bệnh nhi từ 6–15 tuổi (đang điều trị tại Bệnh viện Ung Bướu cơ sở 2), cùng phụ huynh hoặc người chăm sóc đi cùng.</p>
+              <p className="text-[var(--kv-text)]/90">Các bệnh nhi từ 6-15 tuổi (đang điều trị tại Bệnh viện Ung Bướu cơ sở 2), cùng phụ huynh hoặc người chăm sóc đi cùng.</p>
             </div>
           </div>
 
@@ -276,7 +276,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ navigate }) => {
               className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="p-3 bg-[var(--kv-paper-deep)] text-center text-[11px] text-[var(--kv-text-soft)] font-semibold font-display">
-              💛 Ngôi nhà chung Ba Thùy — Nơi lan tỏa yêu thương
+              💛 Ngôi nhà chung Ba Thùy - Nơi lan tỏa yêu thương
             </div>
           </div>
         </div>

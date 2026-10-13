@@ -1,15 +1,15 @@
-# GÓI BÀN GIAO UAT — Website Kết Vòng
+# GÓI BÀN GIAO UAT - Website Kết Vòng
 
 > 3 tài liệu gộp thành 1 (gộp ngày 2026-10-10). Thứ tự sử dụng:
-> 1. **Phần 1** — dán cho coding agent để review + sửa UI/UX (làm trước).
-> 2. **Phần 2** — nội dung giới thiệu chuẩn (input cho agent ở Phần 1).
-> 3. **Phần 3** — yêu cầu UAT, Huy thực hiện sau khi agent xong Phần 1.
+> 1. **Phần 1** - dán cho coding agent để review + sửa UI/UX (làm trước).
+> 2. **Phần 2** - nội dung giới thiệu chuẩn (input cho agent ở Phần 1).
+> 3. **Phần 3** - yêu cầu UAT, Huy thực hiện sau khi agent xong Phần 1.
 
 ---
 
-# PHẦN 1: PROMPT CHO AGENT — REVIEW VÀ SỬA UI/UX
+# PHẦN 1: PROMPT CHO AGENT - REVIEW VÀ SỬA UI/UX
 
-> Dán prompt này cho coding agent. Bối cảnh: trang chủ hiện tại CHƯA phải là trang giới thiệu dự án — đây là vấn đề lớn nhất cần sửa.
+> Dán prompt này cho coding agent. Bối cảnh: trang chủ hiện tại CHƯA phải là trang giới thiệu dự án - đây là vấn đề lớn nhất cần sửa.
 
 ---
 
@@ -17,7 +17,7 @@ Bạn là UI/UX designer + frontend developer. Nhiệm vụ: review toàn bộ U
 
 ## 0. Đọc trước khi làm
 - Đọc `SRS_KetVong.md` để hiểu luồng và yêu cầu.
-- Đọc **Phần 2** của tài liệu này — đây là nội dung chuẩn đã được owner chốt cho trang chủ (bản ngắn) và trang `/gioi-thieu` (bản đầy đủ).
+- Đọc **Phần 2** của tài liệu này - đây là nội dung chuẩn đã được owner chốt cho trang chủ (bản ngắn) và trang `/gioi-thieu` (bản đầy đủ).
 - Brand tokens (kế thừa từ site tham khảo, đã verify): nền `#fffdf9`, primary `#ed7838`, chữ `#483426`, font tiêu đề Baloo 2, font nội dung Nunito Sans. Giữ nhất quán toàn site.
 
 ## 1. Việc bắt buộc: trang chủ phải LÀ giới thiệu dự án
@@ -29,15 +29,15 @@ Restructure trang `/` theo đúng bản ngắn trong `NoiDung_GioiThieu_KetVong.
 5. "Ủng hộ chỉ với 3 bước".
 6. 4 thẻ cam kết (An toàn / Minh bạch / Tôn trọng / Trách nhiệm).
 7. CTA cuối trang + preview ngắn bảng minh bạch mới nhất.
-- Trang `/gioi-thieu` giữ bản đầy đủ. Hai trang không được trùng lặp nguyên văn — trang chủ ngắn gọn, truyền cảm, dẫn về CTA; `/gioi-thieu` chi tiết.
+- Trang `/gioi-thieu` giữ bản đầy đủ. Hai trang không được trùng lặp nguyên văn - trang chủ ngắn gọn, truyền cảm, dẫn về CTA; `/gioi-thieu` chi tiết.
 - Nội dung đưa vào settings/seed (sửa được qua admin UI), không hardcode trong component.
 
 ## 2. Checklist review toàn site (tự sửa khi phát hiện)
 - **Visual hierarchy:** mỗi trang có đúng 1 H1; CTA chính nổi bật nhất trang; không có 2 nút primary cạnh nhau.
 - **Copy tiếng Việt:** không còn text kiểu dev/comment code, không tiếng Anh lẫn lộn, chính tả chuẩn, giọng thân thiện hướng người dùng (xem lại toàn bộ helper text, placeholder, message lỗi, empty state).
 - **Luồng ủng hộ:** donor luôn biết mình đang ở bước nào; màn hình QR hiển thị mã + số tiền + nút copy rõ ràng; hướng dẫn "ghi đúng mã vào nội dung chuyển khoản" không thể bỏ qua.
-- **States:** mọi trang có loading, empty (chưa có dữ liệu) và error state với câu chữ thân thiện — cấm trang trắng, cấm stack trace lộ ra UI.
-- **Mobile:** kiểm tra ở 390px — không vỡ layout, CTA luôn trong tầm tay, QR đủ lớn để quét.
+- **States:** mọi trang có loading, empty (chưa có dữ liệu) và error state với câu chữ thân thiện - cấm trang trắng, cấm stack trace lộ ra UI.
+- **Mobile:** kiểm tra ở 390px - không vỡ layout, CTA luôn trong tầm tay, QR đủ lớn để quét.
 - **Tương phản & đọc được:** chữ trên nền màu phải đủ tương phản; font-size body tối thiểu 16px.
 - **Nhất quán:** spacing, border-radius, màu nút, style card giống nhau toàn site; không mỗi trang một kiểu.
 
@@ -60,26 +60,26 @@ Restructure trang `/` theo đúng bản ngắn trong `NoiDung_GioiThieu_KetVong.
 
 ---
 
-## BẢN NGẮN — Trang chủ (homepage = giới thiệu dự án)
+## BẢN NGẮN - Trang chủ (homepage = giới thiệu dự án)
 
 ### Hero
 - **Eyebrow:** Dự án thiện nguyện · Nhóm Tình
 - **H1:** Kết Vòng
 - **Tagline:** Trao một vòng tay, kết một yêu thương
-- **Sub (2 câu):** Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (11–15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.
+- **Sub (2 câu):** Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (11-15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.
 - **CTA chính:** Ủng hộ ngay → `/ung-ho`
 - **CTA phụ:** Xem minh bạch → `/minh-bach`
 
 ### Dải số liệu (động từ DB, riêng mục tiêu lấy từ settings)
-- 10.000đ — một lượt ủng hộ
-- [tổng đã nhận]đ — đã được ủng hộ (động)
-- [số lượt] — lượt ủng hộ (động)
-- 20–30 — bệnh nhi tham gia workshop
+- 10.000đ - một lượt ủng hộ
+- [tổng đã nhận]đ - đã được ủng hộ (động)
+- [số lượt] - lượt ủng hộ (động)
+- 20-30 - bệnh nhi tham gia workshop
 
 ### Câu chuyện (3 đoạn ngắn)
 1. **Vấn đề:** Trẻ em ung thư phải điều trị dài ngày trong bệnh viện. Việc học, vui chơi, giao tiếp của các em bị thu hẹp, và bệnh viện dần trở thành một phần quen thuộc trong cuộc sống thường ngày.
-2. **Giải pháp:** Một workshop xâu vòng tay hạt cườm ngay tại Ngôi nhà chung Ba Thùy, nơi các em tạm trú để điều trị. Các em tự chọn màu, tự tay làm vòng cho mình hoặc tặng bố mẹ, người chăm sóc, bạn bè — vừa sáng tạo vừa xả stress, an toàn với tiêu chuẩn vệ sinh bệnh viện.
-3. **Kết quả mong đợi:** Ít nhất 20 bệnh nhi có một buổi sáng đầy tiếng cười, mỗi em mang về 1–2 chiếc vòng tay do chính tay mình làm.
+2. **Giải pháp:** Một workshop xâu vòng tay hạt cườm ngay tại Ngôi nhà chung Ba Thùy, nơi các em tạm trú để điều trị. Các em tự chọn màu, tự tay làm vòng cho mình hoặc tặng bố mẹ, người chăm sóc, bạn bè - vừa sáng tạo vừa xả stress, an toàn với tiêu chuẩn vệ sinh bệnh viện.
+3. **Kết quả mong đợi:** Ít nhất 20 bệnh nhi có một buổi sáng đầy tiếng cười, mỗi em mang về 1-2 chiếc vòng tay do chính tay mình làm.
 
 ### Mỗi 10.000đ của bạn đi đâu
 - Tiền ủng hộ dùng cho nguyên vật liệu workshop (hạt cườm, dây, charm, dụng cụ), in ấn, đóng gói quà và tổ chức sự kiện. Tổng ngân sách dự kiến: 2.300.000đ.
@@ -88,7 +88,7 @@ Restructure trang `/` theo đúng bản ngắn trong `NoiDung_GioiThieu_KetVong.
 ### Ủng hộ chỉ với 3 bước
 1. Chọn số lượng, điền thông tin, nhận mã `KV-XXXXXX`.
 2. Quét QR và chuyển khoản đúng số tiền, ghi đúng mã vào nội dung.
-3. Hệ thống tự động ghi nhận — tên bạn xuất hiện trên bảng minh bạch, mail cảm ơn gửi đến hộp thư của bạn.
+3. Hệ thống tự động ghi nhận - tên bạn xuất hiện trên bảng minh bạch, mail cảm ơn gửi đến hộp thư của bạn.
 
 ### Cam kết của nhóm (4 thẻ)
 - **An toàn:** tuân thủ quy định vệ sinh, y tế của nơi tổ chức.
@@ -102,21 +102,21 @@ Restructure trang `/` theo đúng bản ngắn trong `NoiDung_GioiThieu_KetVong.
 
 ---
 
-## BẢN ĐẦY ĐỦ — Trang `/gioi-thieu`
+## BẢN ĐẦY ĐỦ - Trang `/gioi-thieu`
 
 ### Kết Vòng là gì
-Kết Vòng là dự án workshop thiện nguyện của nhóm Tình, tổ chức hoạt động làm vòng tay thủ công cho bệnh nhi ung thư từ 11–15 tuổi đang điều trị nội trú, hiện tạm trú tại Ngôi nhà chung Ba Thùy.
+Kết Vòng là dự án workshop thiện nguyện của nhóm Tình, tổ chức hoạt động làm vòng tay thủ công cho bệnh nhi ung thư từ 11-15 tuổi đang điều trị nội trú, hiện tạm trú tại Ngôi nhà chung Ba Thùy.
 
 Trong buổi workshop, các em được hướng dẫn xỏ vòng tay hạt cườm cùng phụ huynh hoặc người chăm sóc, viết thiệp trao gửi lời chúc yêu thương và đóng gói quà tặng kỷ niệm mang về.
 
 ### Vì sao là vòng tay
-- Trẻ 11–15 tuổi cần sân chơi vừa sức, được tôn trọng quyền tự chủ (tự chọn màu sắc, tự làm) thay vì chỉ nhận quà thụ động.
-- Hoạt động thủ công khô, sạch, không nhiệt, không bụi — đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của bệnh viện (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
+- Trẻ 11-15 tuổi cần sân chơi vừa sức, được tôn trọng quyền tự chủ (tự chọn màu sắc, tự làm) thay vì chỉ nhận quà thụ động.
+- Hoạt động thủ công khô, sạch, không nhiệt, không bụi - đáp ứng tiêu chuẩn vệ sinh nghiêm ngặt của bệnh viện (nhiều workshop khác như nến thơm, tô tượng không đạt được điều này).
 - Thành phẩm là vật kỷ niệm các em đeo mỗi ngày, gợi nhớ một trải nghiệm tích cực giữa quá trình điều trị.
 
 ### Mục tiêu cụ thể
 - Mang lại niềm vui và tâm lý thoải mái cho ít nhất 20 bệnh nhi trong buổi workshop.
-- Mỗi em hoàn thành 1–2 chiếc vòng tay để đeo hoặc tặng bố mẹ, người chăm sóc, bạn bè.
+- Mỗi em hoàn thành 1-2 chiếc vòng tay để đeo hoặc tặng bố mẹ, người chăm sóc, bạn bè.
 - Rèn sự khéo léo, khả năng tập trung và niềm tự hào khi tự tay hoàn thành sản phẩm.
 
 ### Ngân sách dự kiến: 2.300.000đ
@@ -127,7 +127,7 @@ Trong buổi workshop, các em được hướng dẫn xỏ vòng tay hạt cư�
 | In ấn | Thẻ tên, thiệp mời, backdrop | 400.000đ |
 | Đóng gói | Túi/hộp giấy, ruy-băng, sticker (20 phần) | 200.000đ |
 | Vận chuyển | Vật tư, standee, banner | 200.000đ |
-| Dự phòng | Phát sinh (10–15%) | 300.000đ |
+| Dự phòng | Phát sinh (10-15%) | 300.000đ |
 
 ### Hình thức đồng hành
 - **Tài trợ hiện kim:** hỗ trợ chi phí vật liệu, in ấn, đóng gói và tổ chức (ủng hộ trực tiếp qua website).
@@ -162,7 +162,7 @@ Hãy đồng hành cùng Kết Vòng để biến một workshop nhỏ thành m�
 
 **Trong phạm vi:** toàn bộ luồng donor, webhook SePay (giả lập), admin vận hành, trang công khai, biên nhận + thư cảm ơn, consent/riêng tư, bảo mật cơ bản.
 
-**Ngoài phạm vi (để giai đoạn sau):** gửi mail Gmail thật (chưa có OAuth2 production — test ở go-live), migrate Cloudflare/D1, kiểm thử tải (load test).
+**Ngoài phạm vi (để giai đoạn sau):** gửi mail Gmail thật (chưa có OAuth2 production - test ở go-live), migrate Cloudflare/D1, kiểm thử tải (load test).
 
 ## 2. Điều kiện tiên quyết
 
@@ -183,7 +183,7 @@ Hãy đồng hành cùng Kết Vòng để biến một workshop nhỏ thành m�
 
 Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi issue theo mẫu ở mục 6.
 
-### Nhóm A — Luồng donor (AC-01)
+### Nhóm A - Luồng donor (AC-01)
 
 | ID | Tên case | Bước | Kỳ vọng |
 |---|---|---|---|
@@ -194,7 +194,7 @@ Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi 
 | A5 | Quét QR thật | Quét QR màn hình bằng điện thoại | App ngân hàng/MoMo đọc đúng số TK, đúng số tiền, nội dung = mã vừa nhận |
 | A6 | Ủng hộ ẩn danh | Tick "Ẩn danh" rồi làm lại A3 | Vẫn nhận mã bình thường |
 
-### Nhóm B — Webhook SePay giả lập (AC-02)
+### Nhóm B - Webhook SePay giả lập (AC-02)
 
 | ID | Tên case | Bước (dùng script giả lập) | Kỳ vọng |
 |---|---|---|---|
@@ -206,7 +206,7 @@ Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi 
 | B6 | Một mã 2 giao dịch | Giao dịch thứ 2 khác `transaction_id` nhưng cùng mã đã approved | → `manual_review`, lý do `possible_duplicate` |
 | B7 | Mã hết hạn | Tạo donation, chỉnh DB cho quá 48h, gửi webhook đúng mã + tiền | → `manual_review` (hết hạn); KHÔNG tự approve |
 
-### Nhóm C — Admin vận hành (AC-05)
+### Nhóm C - Admin vận hành (AC-05)
 
 | ID | Tên case | Bước | Kỳ vọng |
 |---|---|---|---|
@@ -220,7 +220,7 @@ Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi 
 | C8 | Đổi settings | Đổi đơn giá/preset/QR trong settings → load lại trang ủng hộ | Cập nhật ngay, không cần rebuild |
 | C9 | Gửi lại mail | Giả lập 1 mail lỗi trong `EMAIL_LOG` → bấm gửi lại | Mail được gửi lại, log cập nhật |
 
-### Nhóm D — Công khai, biên nhận, thư cảm ơn (AC-03, AC-04)
+### Nhóm D - Công khai, biên nhận, thư cảm ơn (AC-03, AC-04)
 
 | ID | Tên case | Bước | Kỳ vọng |
 |---|---|---|---|
@@ -230,7 +230,7 @@ Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi 
 | D4 | Thư cảm ơn | Bấm "Tải thư cảm ơn" → mở PNG | File PNG dọc ≥1240px; đúng tên/xưng hô/số tiền/ngày; QR trên thư quét được |
 | D5 | Trang tĩnh | Mở `/gioi-thieu`, `/lien-he`, `/chinh-sach-bao-mat` | Đầy đủ nội dung, tiếng Việt đúng chính tả, không còn text kiểu dev |
 
-### Nhóm E — Riêng tư và consent (AC-06)
+### Nhóm E - Riêng tư và consent (AC-06)
 
 | ID | Tên case | Bước | Kỳ vọng |
 |---|---|---|---|
@@ -239,7 +239,7 @@ Quy ước cột "Kỳ vọng" là điều kiện pass. Case nào fail thì ghi 
 | E3 | Xóa dữ liệu | Admin xóa PII 1 donation theo yêu cầu | SĐT/email/nội dung CK bị xóa; log thành "Ẩn danh"; tổng quỹ không đổi |
 | E4 | Email log sạch PII | Kiểm tra `EMAIL_LOG` sau E3 | Không còn PII của donor đã xóa |
 
-### Nhóm F — Bảo mật cơ bản (agents review + người thử)
+### Nhóm F - Bảo mật cơ bản (agents review + người thử)
 
 | ID | Tên case | Bước | Kỳ vọng |
 |---|---|---|---|
@@ -255,12 +255,12 @@ A1 → A3 → B1 → D1 → C1. Cả 5 xanh mới chạy tiếp các case còn l
 
 ## 6. Ghi nhận lỗi
 
-Mỗi lỗi một issue với: tiêu đề ngắn; bước tái hiện; kỳ vọng vs thực tế; mức độ (**Blocker**: sai tiền/sai người/rò PII — phải sửa trước deploy; **Major**: luồng gãy nhưng có đường vòng; **Minor**: chính tả/UI); ảnh chụp màn hình nếu là lỗi UI.
+Mỗi lỗi một issue với: tiêu đề ngắn; bước tái hiện; kỳ vọng vs thực tế; mức độ (**Blocker**: sai tiền/sai người/rò PII - phải sửa trước deploy; **Major**: luồng gãy nhưng có đường vòng; **Minor**: chính tả/UI); ảnh chụp màn hình nếu là lỗi UI.
 
 ## 7. Tiêu chí nghiệm thu (ĐÃ CHỐT 2026-10-10)
 
 - [ ] 100% nhóm A, B, D pass.
-- [ ] Nhóm C pass tối thiểu C1–C6 và C8 (C7, C9: pass hoặc đã ghi vào `TECH_DEBT.md`).
+- [ ] Nhóm C pass tối thiểu C1-C6 và C8 (C7, C9: pass hoặc đã ghi vào `TECH_DEBT.md`).
 - [ ] 100% nhóm E, F pass (riêng tư và bảo mật không thỏa hiệp).
 - [ ] Không phát sinh Blocker mới; mọi issue đã có người nhận và deadline.
 - [ ] `pnpm test` + `pnpm build` xanh sau mọi bản sửa trong quá trình UAT.

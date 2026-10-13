@@ -644,8 +644,8 @@ adminRoutes.put('/settings', requireAuth, requireSuperAdmin, async (c) => {
 
   const allowedKeys = new Set([
     'unit_price', 'max_quantity', 'presets', 'campaign_name', 'campaign_target', 'campaign_deadline',
-    'bank_name', 'bank_account_number', 'bank_account_name', 'bank_qr_image', 'bank_qr_image_secondary',
-    'contact_email', 'contact_phone', 'campaign_intro', 'privacy_policy',
+    'bank_name', 'bank_account_number', 'bank_account_name', 'bank_qr_image', 'bank_qr_image_secondary', 'bank_bin',
+    'contact_email', 'contact_phone', 'campaign_intro', 'privacy_policy', 'google_sheet_url',
   ]);
   for (const [key, value] of Object.entries(body)) {
     if (!allowedKeys.has(key)) continue;

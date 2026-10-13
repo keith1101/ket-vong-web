@@ -37,6 +37,11 @@ export async function createDonationIntent(
     checkoutUrl: string;
     qrCode: string;
     expiresAt: string;
+    bin?: string;
+    accountNumber?: string;
+    accountName?: string;
+    amount?: number;
+    description?: string;
   } | null;
 }> {
   const database = db || getDb();
@@ -265,6 +270,7 @@ export async function getFundSummary(db?: DatabaseAdapter): Promise<FundSummary 
   bank_account_number: string;
   bank_account_name: string;
   bank_qr_image: string;
+  bank_bin?: string;
 }> {
   const database = db || getDb();
 
@@ -280,7 +286,7 @@ export async function getFundSummary(db?: DatabaseAdapter): Promise<FundSummary 
 
   // Đọc cài đặt
   const settingsRows = await database.query<{ key: string; value: string }>(
-    "SELECT key, value FROM settings WHERE key IN ('campaign_target', 'unit_price', 'max_quantity', 'presets', 'campaign_name', 'campaign_intro', 'privacy_policy', 'contact_email', 'contact_phone', 'google_sheet_url')"
+    "SELECT key, value FROM settings WHERE key IN ('campaign_target', 'unit_price', 'max_quantity', 'presets', 'campaign_name', 'campaign_intro', 'privacy_policy', 'contact_email', 'contact_phone', 'google_sheet_url', 'bank_name', 'bank_account_number', 'bank_account_name', 'bank_qr_image', 'bank_bin')"
   );
   const settingsMap = new Map(settingsRows.map((r) => [r.key, r.value]));
 
@@ -315,10 +321,11 @@ export async function getFundSummary(db?: DatabaseAdapter): Promise<FundSummary 
     privacy_policy: settingsMap.get('privacy_policy') || '',
     contact_email: settingsMap.get('contact_email') || '',
     contact_phone: settingsMap.get('contact_phone') || '',
-    bank_name: '',
-    bank_account_number: '',
-    bank_account_name: '',
-    bank_qr_image: '',
+    bank_name: settingsMap.get('bank_name') || '',
+    bank_account_number: settingsMap.get('bank_account_number') || '',
+    bank_account_name: settingsMap.get('bank_account_name') || '',
+    bank_qr_image: settingsMap.get('bank_qr_image') || '',
+    bank_bin: settingsMap.get('bank_bin') || '',
     google_sheet_url: settingsMap.get('google_sheet_url') || 'https://docs.google.com/spreadsheets/d/12nNrIjXdsfFGHyvdfN9VF3Bo_kUV3ls2I52JjOVbm9M/edit?usp=sharing',
   };
 }

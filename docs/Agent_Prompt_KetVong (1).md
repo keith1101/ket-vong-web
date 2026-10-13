@@ -1,4 +1,4 @@
-# PROMPT CHO CODING AGENT — Website Kết Vòng (giai đoạn localhost)
+# PROMPT CHO CODING AGENT - Website Kết Vòng (giai đoạn localhost)
 
 > Dán toàn bộ prompt này cho coding agent (Claude Code, Codex, Copilot agent...). Agent PHẢI đọc file `SRS_KetVong.md` trong cùng thư mục trước khi viết bất kỳ dòng code nào.
 
@@ -13,7 +13,7 @@ Bạn là senior fullstack developer. Nhiệm vụ: triển khai website Kết V
 ## Cách thực hiện (theo thứ tự)
 1. Dựng monorepo đúng cấu trúc mục 10 SRS (`apps/web`, `apps/api`, `packages/db`), file `.env.example`, `README.md`, `DECISIONS.md`.
 2. Triển khai theo từng module: DB schema + migration → API public (tạo donation + cấp mã, log minh bạch, receipt verify) → **endpoint webhook SePay + script `pnpm webhook:simulate`** → trang công khai (chọn số lượng, form, màn hình chuyển khoản) → admin auth + dashboard + **hàng chờ xử lý ca lệch** → mail cảm ơn (Gmail API, credential giả trong `.env.example`, code đọc từ env) → render thư cảm ơn PNG → báo cáo hàng ngày → template editor → settings (QR, đơn giá, preset).
-3. Mỗi module xong: chạy `pnpm build` và test theo **verification lane** ghi trong thẻ `SRS-*` tương ứng (unit/integration/E2E). Riêng SRS-010–013 bắt buộc test bằng webhook simulator: chữ ký đúng/sai, gửi trùng, khớp/mismatch mã và tiền. Không sang module tiếp theo khi build còn đỏ.
+3. Mỗi module xong: chạy `pnpm build` và test theo **verification lane** ghi trong thẻ `SRS-*` tương ứng (unit/integration/E2E). Riêng SRS-010-013 bắt buộc test bằng webhook simulator: chữ ký đúng/sai, gửi trùng, khớp/mismatch mã và tiền. Không sang module tiếp theo khi build còn đỏ.
 4. Viết `README.md` sao cho người mới clone về chỉ làm theo README là chạy được `pnpm dev` trong 10 phút (ghi rõ cách seed tài khoản admin, cách lấy Gmail OAuth2 token, cách chạy webhook simulator).
 
 ## Quy tắc (từ skill common-software-requirements)

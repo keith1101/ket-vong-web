@@ -31,8 +31,10 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
     const hash = window.location.hash;
     const match = hash.match(/access=([a-f0-9]+)/i);
 
-    // Hỗ trợ chế độ xem thử nghiệm Demo
-    if (code.toLowerCase() === 'demo' || code.toLowerCase().startsWith('demo-') || code.toLowerCase() === 'kv-demo') {
+    // Hỗ trợ chế độ xem thử nghiệm Demo (chỉ cho phép trên localhost dev)
+    const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isDemoCode = code.toLowerCase() === 'demo' || code.toLowerCase().startsWith('demo-') || code.toLowerCase() === 'kv-demo';
+    if (isLocalDev && isDemoCode) {
       setReceiptData({
         code: 'KV-6889AB',
         title: 'Bạn',
@@ -178,7 +180,7 @@ export const ReceiptPage: React.FC<ReceiptPageProps> = ({ code, navigate }) => {
         </button>
       </div>
 
-      {/* KHỐI THƯ CẢM ƠN — MẪU THIẾT KẾ MỚI */}
+      {/* KHỐI THƯ CẢM ƠN - MẪU THIẾT KẾ MỚI */}
       <ThankYouLetterCard
         code={receiptData.code}
         title={receiptData.title}

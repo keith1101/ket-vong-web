@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminGetSettings, adminUpdateSettings } from '../../api';
 import { Settings, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { VIETNAM_BANKS } from '../../utils/banking';
 
 export const AdminSettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -121,32 +122,77 @@ export const AdminSettingsPage: React.FC = () => {
           <h3 className="font-display font-bold text-base text-brand-text border-b border-brand-border/60 pb-2 mb-4">
             2. Tài Khoản Ngân Hàng Tiếp Nhận &amp; QR Code
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-brand-textMuted mb-1">
+                Chọn ngân hàng (VietQR / Deeplink):
+              </label>
+              <select
+                value={settings.bank_bin || ''}
+                onChange={(e) => {
+                  const selectedBin = e.target.value;
+                  const found = VIETNAM_BANKS.find((b) => b.bin === selectedBin);
+                  if (found) {
+                    setSettings((prev) => ({
+                      ...prev,
+                      bank_bin: found.bin,
+                      bank_name: found.shortName,
+                    }));
+                  } else {
+                    handleChange('bank_bin', selectedBin);
+                  }
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs bg-white font-medium"
+              >
+                <option value="">-- Chọn ngân hàng hỗ trợ Deeplink --</option>
+                {VIETNAM_BANKS.filter((b) => /^\d+$/.test(b.bin)).map((bank) => (
+                  <option key={bank.bin} value={bank.bin}>
+                    {bank.shortName} ({bank.fullName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-brand-textMuted mb-1">
-                Tên ngân hàng:
+                Mã BIN ngân hàng:
+              </label>
+              <input
+                type="text"
+                value={settings.bank_bin || ''}
+                onChange={(e) => handleChange('bank_bin', e.target.value)}
+                placeholder="VD: 970422"
+                className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs font-mono font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-brand-textMuted mb-1">
+                Tên ngân hàng hiển thị:
               </label>
               <input
                 type="text"
                 value={settings.bank_name || ''}
                 onChange={(e) => handleChange('bank_name', e.target.value)}
+                placeholder="VD: MB Bank"
                 className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-brand-textMuted mb-1">
-                Số tài khoản:
+                Số tài khoản nhận:
               </label>
               <input
                 type="text"
                 value={settings.bank_account_number || ''}
                 onChange={(e) => handleChange('bank_account_number', e.target.value)}
+                placeholder="VD: 0374519443"
                 className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs font-mono font-bold"
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-3">
               <label className="block text-xs font-semibold text-brand-textMuted mb-1">
                 Tên chủ tài khoản:
               </label>
@@ -154,7 +200,8 @@ export const AdminSettingsPage: React.FC = () => {
                 type="text"
                 value={settings.bank_account_name || ''}
                 onChange={(e) => handleChange('bank_account_name', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs"
+                placeholder="VD: BUI ANH HUY"
+                className="w-full px-3 py-2 rounded-xl border border-brand-border text-xs uppercase font-medium"
               />
             </div>
           </div>

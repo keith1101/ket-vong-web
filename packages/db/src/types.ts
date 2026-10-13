@@ -126,6 +126,7 @@ export interface FundSummary {
   bank_account_number: string;
   bank_account_name: string;
   bank_qr_image: string;
+  bank_bin?: string;
   google_sheet_url?: string;
 }
 

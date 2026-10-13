@@ -86,7 +86,7 @@ Tài liệu này ghi lại các mục SRS/REQ/AC còn đạt một phần sau đ
 - **Mức độ:** TECH DEBT (để sau được)
 - **Kế hoạch:** Chạy checklist trong `docs/CLOUDFLARE_MIGRATION.md` trên staging rồi ghi bằng chứng deploy/test; độ phức tạp cao.
 
-### NFR-01–03
+### NFR-01-03
 - **Hiện trạng:** Có script mô phỏng webhook và build/test tự động; các ngưỡng hiệu năng đã được ghi trong SRS.
 - **Còn thiếu:** Chưa có bằng chứng đo p95 webhook < 2 giây, API public < 300ms và LCP trang chủ < 2,5 giây trên 4G giả lập.
 - **Mức độ:** BLOCKER go-live (phải xong trước khi public)
@@ -98,5 +98,5 @@ Tài liệu này ghi lại các mục SRS/REQ/AC còn đạt một phần sau đ
 - [ ] SRS-050 / AC-04: gửi nhận bằng Gmail OAuth2 thật, kiểm tra email log, link/token và resend.
 - [ ] SRS-063 / AC-05: render Markdown bằng parser an toàn, sanitize/tắt raw HTML và test XSS.
 - [ ] SRS-041 / AC-04: kiểm tra PNG thực tế, kích thước, nội dung và quét QR sau khi tải.
-- [ ] NFR-01–03: đo p95 webhook/API và LCP theo đúng ngưỡng SRS.
+- [ ] NFR-01-03: đo p95 webhook/API và LCP theo đúng ngưỡng SRS.
 

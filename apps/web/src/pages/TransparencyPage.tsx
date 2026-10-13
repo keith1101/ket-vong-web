@@ -464,7 +464,7 @@ export const TransparencyPage: React.FC = () => {
                               {item.stt}
                             </td>
                             <td className="p-3 border-r border-[var(--color-border)] text-[var(--kv-text-soft)] whitespace-nowrap">
-                              {item.date || '—'}
+                              {item.date || '-'}
                             </td>
                             <td className="p-3 border-r border-[var(--color-border)] font-semibold text-[var(--kv-ink)] whitespace-nowrap">
                               <span className="px-2 py-0.5 rounded-lg bg-[var(--kv-blue-bg)] text-[var(--kv-blue-fg)] text-[11px] font-display">
@@ -489,7 +489,7 @@ export const TransparencyPage: React.FC = () => {
                               </span>
                             </td>
                             <td className="p-3 text-[var(--kv-text-soft)] italic">
-                              {item.note || '—'}
+                              {item.note || '-'}
                             </td>
                           </tr>
                         ))

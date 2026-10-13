@@ -2,16 +2,27 @@ import type { FundSummary, PublicDonationItem, AdminUser, Donation, DailyReport 
 
 const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
-    return envUrl.trim().replace(/\/+$/, '');
-  }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1') {
+    // Trên localhost hoặc 127.0.0.1, luôn ưu tiên kết nối backend nội bộ qua Vite proxy hoặc cổng local
+    if (host === 'localhost' || host === '127.0.0.1') {
+      if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+        return envUrl.trim().replace(/\/+$/, '');
+      }
+      return ''; // Sử dụng Vite proxy chuyển tiếp /api -> http://localhost:3001
+    }
+    if (host.includes('staging')) {
+      return 'https://ketvong-api-staging.fb-autocomment.workers.dev';
+    }
+    if (host.includes('pages.dev') || host.includes('ketvong.vn')) {
       return 'https://ketvong-api.fb-autocomment.workers.dev';
     }
   }
-  return '';
+
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  return 'https://ketvong-api.fb-autocomment.workers.dev';
 };
 
 export const API_BASE = `${getApiBaseUrl()}/api/v1`;

@@ -3,7 +3,14 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { DatabaseAdapter } from '@ketvong/db';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let templateDir = '';
+try {
+  if (typeof import.meta !== 'undefined' && import.meta?.url) {
+    templateDir = path.dirname(fileURLToPath(import.meta.url));
+  }
+} catch {
+  templateDir = '';
+}
 
 interface GenerateLetterParams {
   code: string;
@@ -18,17 +25,23 @@ interface GenerateLetterParams {
 let cachedTemplateBase64: string | null = null;
 function getTemplateBase64(): string {
   if (!cachedTemplateBase64) {
-    const jpgPath = path.resolve(__dirname, '../assets/thank-you-template-clean.jpg');
-    if (fs.existsSync(jpgPath)) {
-      cachedTemplateBase64 = `data:image/jpeg;base64,${fs.readFileSync(jpgPath).toString('base64')}`;
-    } else {
-      const pngPath = path.resolve(__dirname, '../assets/thank-you-template-clean.png');
-      if (fs.existsSync(pngPath)) {
-        cachedTemplateBase64 = `data:image/png;base64,${fs.readFileSync(pngPath).toString('base64')}`;
-      } else {
-        cachedTemplateBase64 = '';
+    try {
+      if (templateDir && typeof fs?.existsSync === 'function') {
+        const jpgPath = path.resolve(templateDir, '../assets/thank-you-template-clean.jpg');
+        if (fs.existsSync(jpgPath)) {
+          cachedTemplateBase64 = `data:image/jpeg;base64,${fs.readFileSync(jpgPath).toString('base64')}`;
+          return cachedTemplateBase64;
+        }
+        const pngPath = path.resolve(templateDir, '../assets/thank-you-template-clean.png');
+        if (fs.existsSync(pngPath)) {
+          cachedTemplateBase64 = `data:image/png;base64,${fs.readFileSync(pngPath).toString('base64')}`;
+          return cachedTemplateBase64;
+        }
       }
+    } catch {
+      // In Cloudflare Workers environment, fs is not available
     }
+    cachedTemplateBase64 = 'https://ketvong.pages.dev/images/thank-you-template-clean.jpg';
   }
   return cachedTemplateBase64;
 }

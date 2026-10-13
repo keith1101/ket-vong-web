@@ -15,6 +15,11 @@ export interface PayOSPaymentLink {
   qrCode: string;
   status: string;
   expiresAt: string;
+  bin?: string;
+  accountNumber?: string;
+  accountName?: string;
+  amount?: number;
+  description?: string;
 }
 
 function createPaymentSignature(input: CreatePayOSPaymentInput): Promise<string> {
@@ -72,5 +77,10 @@ export async function createPayOSPayment(input: CreatePayOSPaymentInput): Promis
     qrCode: String(body.data.qrCode || ''),
     status: String(body.data.status || 'PENDING'),
     expiresAt: new Date(input.expiresAt * 1000).toISOString(),
+    bin: body.data.bin ? String(body.data.bin) : undefined,
+    accountNumber: body.data.accountNumber ? String(body.data.accountNumber) : undefined,
+    accountName: body.data.accountName ? String(body.data.accountName) : undefined,
+    amount: typeof body.data.amount === 'number' ? body.data.amount : input.amount,
+    description: body.data.description ? String(body.data.description) : input.description,
   };
 }

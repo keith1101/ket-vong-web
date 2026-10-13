@@ -1,8 +1,8 @@
 # SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
-## Website Kết Vòng — Luồng quyên góp tự động qua SePay
+## Website Kết Vòng - Luồng quyên góp tự động qua SePay
 
 **Status:** Draft | **Owner:** Bùi Anh Huy | **Phiên bản:** 2.0 (2026-10-10)
-**Thay thế:** v1.0 (2026-10-09, luồng thủ công) — bị thay bằng quyết định chuyển sang tự động ngày 2026-10-10.
+**Thay thế:** v1.0 (2026-10-09, luồng thủ công) - bị thay bằng quyết định chuyển sang tự động ngày 2026-10-10.
 **Format:** theo skill `common-software-requirements` (requirement card `SRS-*`, traceability, verification matrix). Chuẩn tham chiếu: ISO/IEC/IEEE 29148.
 
 ---
@@ -15,7 +15,7 @@
 - **Scope:** Web chạy localhost để phát triển; kiến trúc phải migrate được lên Cloudflare (Pages + Workers + D1) mà không sửa business logic.
 - **Ngoài phạm vi:** deploy production, MoMo/ZaloPay merchant gateway, tài khoản donor, đa chiến dịch, đa ngôn ngữ.
 
-### REQ — yêu cầu đã chốt với product owner
+### REQ - yêu cầu đã chốt với product owner
 
 | REQ ID | Nội dung |
 |---|---|
@@ -39,11 +39,11 @@
 
 | BRD Objective | PRD Req | AC | SRS | Verification |
 |---|---|---|---|---|
-| BRD-OBJ-01 | REQ-01, REQ-02, REQ-05 | AC-01 | SRS-001 – SRS-004 | E2E / manual |
-| BRD-OBJ-02 | REQ-04, REQ-05, REQ-09 | AC-02 | SRS-010 – SRS-013, SRS-020 | integration / E2E |
+| BRD-OBJ-01 | REQ-01, REQ-02, REQ-05 | AC-01 | SRS-001 - SRS-004 | E2E / manual |
+| BRD-OBJ-02 | REQ-04, REQ-05, REQ-09 | AC-02 | SRS-010 - SRS-013, SRS-020 | integration / E2E |
 | BRD-OBJ-01 | REQ-06 | AC-03 | SRS-030, SRS-031 | E2E / security test |
 | BRD-OBJ-01 | REQ-01, REQ-07, REQ-08 | AC-04 | SRS-040, SRS-041, SRS-050 | E2E / manual |
-| BRD-OBJ-01 | REQ-10, REQ-11 | AC-05 | SRS-060 – SRS-064 | E2E / review |
+| BRD-OBJ-01 | REQ-10, REQ-11 | AC-05 | SRS-060 - SRS-064 | E2E / review |
 | BRD-OBJ-03 | REQ-12 | AC-06 | SRS-002, SRS-070 | E2E |
 | BRD-OBJ-02 | REQ-13 | AC-07 | SRS-080 | review / build |
 
@@ -268,8 +268,8 @@
 | Flow ID | Actor | Goal | Normal Course | Alternatives | Exceptions |
 |---|---|---|---|---|---|
 | FLOW-01 | Donor | Ủng hộ và được ghi nhận tự động | Chọn số lượng → thấy số tiền → điền form → nhận mã KV-XXXX → quét QR, chuyển đúng tiền + mã → webhook khớp → lên log + nhận mail | Nhập số lượng tùy ý; chọn ẩn danh; dùng app Momo/ZaloPay/app ngân hàng để quét | Sai/thiếu mã, sai tiền → hàng chờ tay (SRS-020); chữ ký webhook sai → 401 |
-| FLOW-02 | Admin | Xử lý ca lệch | Mở hàng chờ → xem chi tiết (tiền, nội dung CK gốc) → gán vào mã / tạo mới / từ chối → nếu duyệt: lên log + gửi mail | Gửi lại mail khi lỗi | — |
-| FLOW-03 | Donor | Xem biên nhận, tải thư cảm ơn | Click link trong mail → trang đọc token ở fragment → verify qua body → hiện biên nhận → tải PNG | — | Token sai → 404 chung; brute force → rate limit |
+| FLOW-02 | Admin | Xử lý ca lệch | Mở hàng chờ → xem chi tiết (tiền, nội dung CK gốc) → gán vào mã / tạo mới / từ chối → nếu duyệt: lên log + gửi mail | Gửi lại mail khi lỗi | - |
+| FLOW-03 | Donor | Xem biên nhận, tải thư cảm ơn | Click link trong mail → trang đọc token ở fragment → verify qua body → hiện biên nhận → tải PNG | - | Token sai → 404 chung; brute force → rate limit |
 
 ```mermaid
 sequenceDiagram
@@ -388,8 +388,8 @@ erDiagram
 
 | Requirement ID | Verification Lane | Evidence Artifact |
 |---|---|---|
-| SRS-001 – SRS-004 | E2E / unit (SRS-004) | test report, checklist AC-01 |
-| SRS-010 – SRS-013 | integration | webhook simulator log, AC-02 |
+| SRS-001 - SRS-004 | E2E / unit (SRS-004) | test report, checklist AC-01 |
+| SRS-010 - SRS-013 | integration | webhook simulator log, AC-02 |
 | SRS-020 | E2E | test report, AC-02/AC-05 |
 | SRS-030, SRS-031 | E2E / security test | JSON response dump, AC-03 |
 | SRS-040, SRS-041, SRS-050 | E2E / manual | mailbox test, PNG render, AC-04 |
@@ -403,7 +403,7 @@ erDiagram
 
 - **Môi trường:** Node.js 20 LTS, pnpm 10.
 - **Cấu trúc monorepo:** `apps/web` (React+Vite+TS) · `apps/api` (Hono+TS) · `packages/db` (schema, migration, adapter) · `.env.example` · `README.md` · `DECISIONS.md`.
-- **Script:** `pnpm install` · `pnpm db:migrate` · `pnpm dev` · `pnpm build` · `pnpm test` · `pnpm seed:admin` · `pnpm webhook:simulate` (giả lập webhook SePay để test SRS-010–013 trên localhost).
+- **Script:** `pnpm install` · `pnpm db:migrate` · `pnpm dev` · `pnpm build` · `pnpm test` · `pnpm seed:admin` · `pnpm webhook:simulate` (giả lập webhook SePay để test SRS-010-013 trên localhost).
 - **Git:** `main` / `develop` / `feature/*`; Conventional Commits; PR checklist (build pass, test pass, không secret, README cập nhật nếu đổi setup).
 - **Cấm:** hardcode secret; hardcode nội dung marketing vào component; nối chuỗi SQL.
 
@@ -411,7 +411,7 @@ erDiagram
 
 ## 11. DECISION LOG
 
-- 2026-10-09: bản v1.0 luồng thủ công (đối chiếu tay ví Momo) — đã bị thay thế.
+- 2026-10-09: bản v1.0 luồng thủ công (đối chiếu tay ví Momo) - đã bị thay thế.
 - 2026-10-10: chuyển sang tự động qua SePay theo quyết định của product owner (Trúc cân nhắc lại). Trúc mở tài khoản ngân hàng mới, link SePay gói free 50 giao dịch/tháng.
 - QR tĩnh cấu hình qua UI (giống web tham khảo); donor tự nhập số tiền + mã; **mã trong nội dung CK là yếu tố khớp chính**, không phải QR.
 - Donor chọn số lượng theo preset + tùy chỉnh; mỗi mức hiện số tiền tương ứng (đơn giá × số lượng).
@@ -419,7 +419,7 @@ erDiagram
 - Thư cảm ơn render từ 1 template + biến, cấm AI gen ảnh (AI không render được QR quét được và chữ Việt có dấu chuẩn).
 - 2026-10-10 (bổ sung): đơn giá 10.000đ/vòng tay, preset [1] + nhập tùy ý (owner chốt). Dự kiến có thể vượt 50 giao dịch/tháng → code tách tầng đếm giao dịch để nâng gói SePay bằng cấu hình; dashboard hiện số giao dịch đã dùng trong tháng.
 
-## 12. OPEN ITEMS — ĐÃ CHỐT HẾT (2026-10-10)
+## 12. OPEN ITEMS - ĐÃ CHỐT HẾT (2026-10-10)
 
 1. ~~Đơn giá mỗi vòng tay / mỗi đơn vị ủng hộ là bao nhiêu?~~ → **10.000đ/vòng tay** (mặc định, admin đổi được qua UI).
 2. ~~Các mức preset số lượng là gì?~~ → **preset duy nhất [1]**, kèm ô nhập số lượng tùy ý.

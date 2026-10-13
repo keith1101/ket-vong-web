@@ -307,7 +307,7 @@ export interface ThankYouEmailMeta {
  * - Vinh danh người ủng hộ {{title}} {{name}}
  * - Pill badge màu hồng Crayon nổi bật số tiền đóng góp {{amount}} VNĐ
  * - Mã ủng hộ {{code}} & Ngày xác nhận {{date}}
- * - Khẩu hiệu “Mỗi hạt cườm gửi trao — Một nhịp cầu yêu thương kết nối”
+ * - Khẩu hiệu “Mỗi hạt cườm gửi trao - Một nhịp cầu yêu thương kết nối”
  * - Nút bấm lớn xem Thư cảm ơn & Biên nhận điện tử
  * - Con dấu đỏ đối soát Nghị định 93 & Chữ ký đại diện BTC Nguyễn Thanh Trúc
  * - Ghi chú tuân thủ NĐ 93/2021/NĐ-CP & NĐ 13/2023/NĐ-CP
@@ -387,7 +387,7 @@ export function renderThankYouHtml(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Thư Cảm Ơn — Dự Án Workshop Kết Vòng</title>
+  <title>Thư Cảm Ơn - Dự Án Workshop Kết Vòng</title>
 </head>
 <body style="margin:0;padding:0;background-color:#FFF8EE;color:#3D2B1F;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;">
   <!-- Bọc ngoài toàn email -->
@@ -549,7 +549,7 @@ export function renderCheckoutHtml(content: string, statusUrl: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yêu Cầu Ủng Hộ — Dự Án Kết Vòng</title>
+  <title>Yêu Cầu Ủng Hộ - Dự Án Kết Vòng</title>
 </head>
 <body style="margin:0;padding:0;background-color:#FFF8EE;color:#3D2B1F;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;">
   <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFF8EE" style="background-color:#FFF8EE;padding:32px 12px;">

@@ -71,7 +71,7 @@ export async function runMigrations() {
       campaign_target: '4000000',
       contact_email: 'vongtayganket2006@gmail.com',
       contact_phone: '0374519443',
-      campaign_intro: 'Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6–15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.',
+      campaign_intro: 'Kết Vòng là workshop làm vòng tay thủ công dành cho bệnh nhi ung thư (6-15 tuổi) đang điều trị tại Ngôi nhà chung Ba Thùy. Mỗi vòng tay các em tự tay xâu là một giờ phút quên đi bệnh tật, và một kỷ niệm mang về cho gia đình.',
       privacy_policy: 'Chúng tôi cam kết bảo vệ dữ liệu cá nhân của người ủng hộ theo Nghị định 13/2023/NĐ-CP. Thông tin liên hệ chỉ dùng để đối chiếu khi cần thiết và không bao giờ công khai.'
     };
 

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   KẾT VÒNG — Design tokens (phương án 1: Crayon rainbow)
+   KẾT VÒNG - Design tokens (phương án 1: Crayon rainbow)
    Nguồn màu: chữ crayon trong logo, hạt cườm, giấy ô ly trong art direction.
    Cách dùng: <link> file này trước stylesheet chính, rồi chỉ dùng các biến
    ở lớp "semantic" (--color-*, --space-*, --radius-*...) trong component.
