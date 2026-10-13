@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Mail, RefreshCw } from 'lucide-react';
 import { API_BASE, apiFetch } from '../../api';
+import { formatDateTime } from '../../utils/date';
 
 export const AdminLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<{ auditLogs: any[]; emailLogs: any[] }>({ auditLogs: [], emailLogs: [] });
@@ -87,7 +88,7 @@ export const AdminLogsPage: React.FC = () => {
               <tbody className="divide-y divide-brand-border/60">
                 {logs.auditLogs.map((l) => (
                   <tr key={l.id}>
-                    <td className="py-2.5 px-3 text-brand-textMuted">{new Date(l.created_at).toLocaleString('vi-VN')}</td>
+                    <td className="py-2.5 px-3 text-brand-textMuted whitespace-nowrap">{formatDateTime(l.created_at)}</td>
                     <td className="py-2.5 px-3 font-semibold">{l.admin_name}</td>
                     <td className="py-2.5 px-3 font-mono font-bold text-brand-orange">{l.action}</td>
                     <td className="py-2.5 px-3 font-mono">{l.target}</td>
@@ -112,7 +113,7 @@ export const AdminLogsPage: React.FC = () => {
               <tbody className="divide-y divide-brand-border/60">
                 {logs.emailLogs.map((l) => (
                   <tr key={l.id}>
-                    <td className="py-2.5 px-3 text-brand-textMuted">{new Date(l.sent_at).toLocaleString('vi-VN')}</td>
+                    <td className="py-2.5 px-3 text-brand-textMuted whitespace-nowrap">{formatDateTime(l.sent_at)}</td>
                     <td className="py-2.5 px-3 font-semibold">{l.recipient_email}</td>
                     <td className="py-2.5 px-3">{l.subject}</td>
                     <td className="py-2.5 px-3">
