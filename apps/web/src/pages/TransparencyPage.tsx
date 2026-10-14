@@ -107,6 +107,16 @@ export const TransparencyPage: React.FC = () => {
 
   const totalFilteredExpense = filteredItems.reduce((sum, it) => sum + it.amount, 0);
 
+  // Tổng quỹ đã thu lấy từ phần tiến độ gây quỹ (số tiền gây quỹ không bị ảnh hưởng bởi thu chi)
+  const totalFundReceived = summary?.total_received ?? 0;
+  // Ngân sách còn lại tính theo tổng quỹ đã thu trừ đi phần đã chi
+  const remainingBudget = sheetData ? totalFundReceived - sheetData.totalSpent : 0;
+  // Tỷ lệ sử dụng quỹ dựa trên tổng quỹ đã thu
+  const usageRate =
+    sheetData && totalFundReceived > 0
+      ? `${((sheetData.totalSpent / totalFundReceived) * 100).toFixed(1)}%`
+      : sheetData?.usageRate || '0,0%';
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Header */}
@@ -308,15 +318,15 @@ export const TransparencyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 4 Thẻ chỉ số lấy từ Google Sheets */}
+          {/* 4 Thẻ chỉ số lấy từ Google Sheets & Tổng Quỹ */}
           {sheetData && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)] shadow-xs space-y-1">
                 <span className="text-[11px] font-semibold text-[var(--kv-text-soft)] flex items-center gap-1 font-display">
-                  <Coins className="w-3.5 h-3.5 text-[var(--kv-ink)]" /> Ngân Sách Dự Toán
+                  <Coins className="w-3.5 h-3.5 text-[var(--kv-ink)]" /> Tổng Quỹ Đã Thu
                 </span>
                 <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-ink)]">
-                  {sheetData.targetBudget.toLocaleString('vi-VN')} đ
+                  {totalFundReceived.toLocaleString('vi-VN')} đ
                 </div>
               </div>
 
@@ -334,7 +344,7 @@ export const TransparencyPage: React.FC = () => {
                   <Wallet className="w-3.5 h-3.5 text-[var(--kv-green-fg)]" /> Ngân Sách Còn Lại
                 </span>
                 <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-green-fg)]">
-                  {sheetData.remainingBudget.toLocaleString('vi-VN')} đ
+                  {remainingBudget.toLocaleString('vi-VN')} đ
                 </div>
               </div>
 
@@ -343,7 +353,7 @@ export const TransparencyPage: React.FC = () => {
                   <Sparkles className="w-3.5 h-3.5 text-[var(--kv-purple-fg)]" /> Tỷ Lệ Sử Dụng
                 </span>
                 <div className="font-display font-extrabold text-lg sm:text-xl text-[var(--kv-purple-fg)]">
-                  {sheetData.usageRate}
+                  {usageRate}
                 </div>
               </div>
             </div>
