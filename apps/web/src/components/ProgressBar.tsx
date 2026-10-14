@@ -1,17 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { FundSummary } from '../types';
 import { Target, TrendingUp, Users, Wallet } from 'lucide-react';
+import { fetchSheetLedger } from '../services/google-sheets';
 
-interface ProgressBarProps {
+export interface ProgressBarProps {
   summary: FundSummary | null;
+  totalSpent?: number;
 }
 
-export const ProgressBar: React.FC<ProgressBarProps> = ({ summary }) => {
+export const ProgressBar: React.FC<ProgressBarProps> = ({ summary, totalSpent: overrideSpent }) => {
+  const [sheetSpent, setSheetSpent] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (overrideSpent === undefined && summary?.google_sheet_url) {
+      fetchSheetLedger(summary.google_sheet_url)
+        .then((data) => setSheetSpent(data.totalSpent))
+        .catch(() => {});
+    }
+  }, [overrideSpent, summary?.google_sheet_url]);
+
   if (!summary) return null;
 
   const target = summary.target_amount;
   const received = summary.total_received || 0;
   const percentage = Math.min(100, Math.round((received / target) * 100));
+
+  // Đồng bộ Tổng Đã Chi từ sổ quỹ (hoặc fallback summary.total_spent)
+  const spent = overrideSpent !== undefined ? overrideSpent : (sheetSpent ?? summary.total_spent ?? 0);
+  // Số dư quỹ = Tổng đã thu trừ đi tổng đã chi
+  const balance = received - spent;
 
   return (
     <div className="bg-[var(--color-surface)] rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-sm mb-10">
@@ -82,7 +99,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ summary }) => {
           </div>
           <div>
             <div className="text-[11px] text-[var(--kv-text-soft)] font-medium">Tổng Đã Chi</div>
-            <div className="font-display font-bold text-base text-[var(--kv-ink)]">{summary.total_spent.toLocaleString('vi-VN')} đ</div>
+            <div className="font-display font-bold text-base text-[var(--kv-ink)]">{spent.toLocaleString('vi-VN')} đ</div>
           </div>
         </div>
 
@@ -92,7 +109,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ summary }) => {
           </div>
           <div>
             <div className="text-[11px] text-[var(--kv-text-soft)] font-medium">Số Dư Quỹ</div>
-            <div className="font-display font-bold text-base text-[var(--kv-green-fg)]">{summary.balance.toLocaleString('vi-VN')} đ</div>
+            <div className="font-display font-bold text-base text-[var(--kv-green-fg)]">{balance.toLocaleString('vi-VN')} đ</div>
           </div>
         </div>
       </div>

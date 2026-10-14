@@ -134,7 +134,7 @@ export const TransparencyPage: React.FC = () => {
       </div>
 
       {/* 4 Chỉ số quỹ & tiến độ */}
-      <ProgressBar summary={summary} />
+      <ProgressBar summary={summary} totalSpent={sheetData?.totalSpent} />
 
       {/* Tabs chuyển đổi: Chỉ Tab 1 và Tab 2 */}
       <div className="flex border-b border-[var(--color-border)] mb-8 overflow-x-auto no-scrollbar">
