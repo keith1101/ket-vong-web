@@ -13,6 +13,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { DoodleHeart, DoodleStar } from '../components/DoodleDecorations';
+import { MarkdownContent } from '../components/MarkdownContent';
 
 interface PostDetailPageProps {
   slug: string;
@@ -56,68 +57,7 @@ export const PostDetailPage: React.FC<PostDetailPageProps> = ({ slug, navigate }
     }
   };
 
-  const renderMarkdownContent = (md: string) => {
-    const lines = md.split('\n');
-    return lines.map((line, idx) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('### ')) {
-        return (
-          <h3 key={idx} className="font-display font-bold text-lg sm:text-xl text-[var(--kv-ink)] mt-6 mb-3">
-            {trimmed.slice(4)}
-          </h3>
-        );
-      }
-      if (trimmed.startsWith('## ')) {
-        return (
-          <h2 key={idx} className="font-display font-extrabold text-xl sm:text-2xl text-[var(--kv-ink)] mt-8 mb-4 pb-2 border-b border-[var(--color-border)]">
-            {trimmed.slice(3)}
-          </h2>
-        );
-      }
-      if (trimmed.startsWith('# ')) {
-        return (
-          <h1 key={idx} className="font-display font-black text-2xl sm:text-3xl text-[var(--kv-ink)] mt-8 mb-4">
-            {trimmed.slice(2)}
-          </h1>
-        );
-      }
-      if (trimmed.startsWith('> ')) {
-        return (
-          <blockquote key={idx} className="pl-4 py-2 my-4 border-l-4 border-[var(--kv-pink)] bg-[var(--kv-pink-bg)] text-xs sm:text-sm font-medium text-[var(--kv-ink)] rounded-r-2xl italic leading-relaxed">
-            {trimmed.slice(2)}
-          </blockquote>
-        );
-      }
-      if (trimmed.startsWith('- ')) {
-        return (
-          <li key={idx} className="ml-5 list-disc text-xs sm:text-sm text-[var(--kv-text)] my-1.5 leading-relaxed">
-            {trimmed.slice(2)}
-          </li>
-        );
-      }
-      const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
-      if (imgMatch) {
-        return (
-          <figure key={idx} className="my-6 rounded-3xl overflow-hidden border border-[var(--color-border)] shadow-xs bg-gray-50 max-w-2xl mx-auto">
-            <img src={imgMatch[2]} alt={imgMatch[1]} className="w-full h-auto object-cover max-h-[460px]" />
-            {imgMatch[1] && (
-              <figcaption className="text-xs text-center text-[var(--kv-text-soft)] py-2.5 px-4 bg-[var(--kv-paper)] border-t border-[var(--color-border)] font-body italic">
-                {imgMatch[1]}
-              </figcaption>
-            )}
-          </figure>
-        );
-      }
-      if (!trimmed) {
-        return <div key={idx} className="h-3" />;
-      }
-      return (
-        <p key={idx} className="text-xs sm:text-sm text-[var(--kv-text)] leading-relaxed sm:leading-loose my-2 font-body">
-          {trimmed}
-        </p>
-      );
-    });
-  };
+
 
   if (loading) {
     return (
@@ -218,9 +158,7 @@ export const PostDetailPage: React.FC<PostDetailPageProps> = ({ slug, navigate }
 
       {/* Nội dung bài viết */}
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[var(--color-border)] shadow-xs">
-        <div className="prose max-w-none">
-          {renderMarkdownContent(post.content_markdown)}
-        </div>
+        <MarkdownContent content={post.content_markdown} />
 
         {/* Footer kêu gọi trong bài */}
         <div className="mt-10 pt-6 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--kv-paper)] p-6 rounded-2xl">

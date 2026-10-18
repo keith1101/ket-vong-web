@@ -6,6 +6,7 @@ import {
   adminDeletePost,
 } from '../../api';
 import type { Post, PostStatus } from '../../types';
+import { MarkdownContent } from '../../components/MarkdownContent';
 import {
   Plus,
   Edit3,
@@ -208,49 +209,7 @@ export const AdminPostsPage: React.FC = () => {
     }
   };
 
-  // Render markdown cơ bản cho Live Preview
-  const renderSimpleMarkdown = (md: string) => {
-    const lines = md.split('\n');
-    return lines.map((line, idx) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('### ')) {
-        return <h3 key={idx} className="text-lg font-bold font-display text-[var(--kv-ink)] mt-4 mb-2">{trimmed.slice(4)}</h3>;
-      }
-      if (trimmed.startsWith('## ')) {
-        return <h2 key={idx} className="text-xl font-extrabold font-display text-[var(--kv-ink)] mt-5 mb-2 pb-1 border-b border-gray-100">{trimmed.slice(3)}</h2>;
-      }
-      if (trimmed.startsWith('# ')) {
-        return <h1 key={idx} className="text-2xl font-black font-display text-[var(--kv-ink)] mt-6 mb-3">{trimmed.slice(2)}</h1>;
-      }
-      if (trimmed.startsWith('> ')) {
-        return (
-          <blockquote key={idx} className="pl-4 py-1.5 my-3 border-l-4 border-[var(--kv-pink)] bg-[var(--kv-pink-bg)] text-xs font-medium text-[var(--kv-ink)] rounded-r-xl italic">
-            {trimmed.slice(2)}
-          </blockquote>
-        );
-      }
-      if (trimmed.startsWith('- ')) {
-        return (
-          <li key={idx} className="ml-5 list-disc text-xs text-[var(--kv-text)] my-1">
-            {trimmed.slice(2)}
-          </li>
-        );
-      }
-      const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
-      if (imgMatch) {
-        return (
-          <div key={idx} className="my-4 rounded-2xl overflow-hidden border border-gray-100 max-w-lg mx-auto">
-            <img src={imgMatch[2]} alt={imgMatch[1]} className="w-full h-auto object-cover max-h-72" />
-            {imgMatch[1] && <div className="text-[11px] text-center text-gray-400 py-1 bg-gray-50">{imgMatch[1]}</div>}
-          </div>
-        );
-      }
-      if (!trimmed) {
-        return <div key={idx} className="h-2" />;
-      }
-      return <p key={idx} className="text-xs text-[var(--kv-text)] leading-relaxed my-1.5">{trimmed}</p>;
-    });
-  };
+
 
   const filteredPosts = posts.filter((p) => {
     const matchesFilter = filterStatus === 'all' || p.status === filterStatus;
@@ -763,7 +722,7 @@ export const AdminPostsPage: React.FC = () => {
                 ) : (
                   <div className="p-4 rounded-xl border border-gray-200 min-h-[240px] max-h-96 overflow-y-auto bg-gray-50/50">
                     {contentMarkdown ? (
-                      renderSimpleMarkdown(contentMarkdown)
+                      <MarkdownContent content={contentMarkdown} />
                     ) : (
                       <p className="text-xs text-gray-400 italic">Chưa có nội dung soạn thảo để xem trước.</p>
                     )}
