@@ -13,7 +13,7 @@ import { sendThankYouEmail } from '../services/email-service.js';
 import { createDonationIntent } from '../services/donation-service.js';
 import { generateReceiptToken, hashSha256 } from '../utils/hmac.js';
 import { config } from '../config.js';
-import type { Donation, DailyReport, Template } from '@ketvong/db';
+import type { Donation, DailyReport, Template, Post } from '@ketvong/db';
 import type { Context } from 'hono';
 import { getTrustedClientIp, isAllowedMutationOrigin, readJsonBody } from '../utils/request-security.js';
 
@@ -730,5 +730,173 @@ adminRoutes.post('/emails/:id/resend', requireAuth, async (c) => {
   }, db);
   await recordAuditLog(admin.adminId, admin.name, 'RESEND_EMAIL', `email:${emailLog.id}`, `Gửi lại email cho mã ${donation.code}`);
   return c.json({ success: sent, message: sent ? 'Đã gửi lại email cảm ơn.' : 'Gửi lại email chưa thành công.' });
+});
+
+// -----------------------------------------------------------------------------
+// QUẢN LÝ BÀI VIẾT (POSTS MANAGEMENT)
+// -----------------------------------------------------------------------------
+
+function slugifyVietnamese(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// GET /api/v1/admin/posts - Lấy tất cả bài viết (kể cả bản nháp)
+adminRoutes.get('/posts', requireAuth, async (c) => {
+  const db = getDb();
+  const posts = await db.query<Post>('SELECT * FROM posts ORDER BY created_at DESC');
+  return c.json({ success: true, data: posts });
+});
+
+// POST /api/v1/admin/posts - Tạo bài viết mới
+adminRoutes.post('/posts', requireAuth, async (c) => {
+  const db = getDb();
+  const admin = c.get('admin') as AdminSession;
+  const body = await c.req.json();
+  const { title, slug, excerpt, content_markdown, cover_image, category, status } = body;
+
+  if (!title || typeof title !== 'string' || title.trim().length < 3) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Tiêu đề bài viết phải có ít nhất 3 ký tự.' } }, 400);
+  }
+
+  if (!content_markdown || typeof content_markdown !== 'string' || content_markdown.trim().length < 10) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Nội dung bài viết phải có ít nhất 10 ký tự.' } }, 400);
+  }
+
+  let finalSlug = slugifyVietnamese(slug || title);
+  if (!finalSlug) {
+    finalSlug = `bai-viet-${Date.now()}`;
+  }
+
+  // Kiểm tra trùng lặp slug
+  const existing = await db.queryOne<{ id: string }>('SELECT id FROM posts WHERE slug = ?', [finalSlug]);
+  if (existing) {
+    finalSlug = `${finalSlug}-${Math.random().toString(36).substring(2, 6)}`;
+  }
+
+  const cleanExcerpt = (excerpt && typeof excerpt === 'string' && excerpt.trim())
+    ? excerpt.trim()
+    : content_markdown.replace(/[#*`_>\-\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) + '...';
+
+  const postStatus = status === 'published' ? 'published' : 'draft';
+  const now = new Date().toISOString();
+  const publishedAt = postStatus === 'published' ? now : null;
+  const postId = crypto.randomUUID();
+  const postCategory = (category && typeof category === 'string' && category.trim()) ? category.trim() : 'Hoạt động';
+
+  await db.execute(
+    `INSERT INTO posts (id, slug, title, excerpt, content_markdown, cover_image, category, status, author_id, author_name, published_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      postId,
+      finalSlug,
+      title.trim(),
+      cleanExcerpt,
+      content_markdown.trim(),
+      cover_image || null,
+      postCategory,
+      postStatus,
+      admin.adminId,
+      admin.name,
+      publishedAt,
+      now,
+      now,
+    ]
+  );
+
+  await recordAuditLog(admin.adminId, admin.name, 'CREATE_POST', `post:${finalSlug}`, `Tạo bài viết: ${title.trim()}`);
+
+  const createdPost = await db.queryOne<Post>('SELECT * FROM posts WHERE id = ?', [postId]);
+  return c.json({
+    success: true,
+    message: postStatus === 'published' ? 'Đã xuất bản bài viết thành công.' : 'Đã lưu bản nháp bài viết.',
+    data: createdPost,
+  });
+});
+
+// PUT /api/v1/admin/posts/:id - Cập nhật bài viết
+adminRoutes.put('/posts/:id', requireAuth, async (c) => {
+  const db = getDb();
+  const admin = c.get('admin') as AdminSession;
+  const id = c.req.param('id');
+  const body = await c.req.json();
+
+  const current = await db.queryOne<Post>('SELECT * FROM posts WHERE id = ?', [id]);
+  if (!current) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết cần chỉnh sửa.' } }, 404);
+  }
+
+  const { title, slug, excerpt, content_markdown, cover_image, category, status } = body;
+
+  const newTitle = (title && typeof title === 'string') ? title.trim() : current.title;
+  const newContent = (content_markdown && typeof content_markdown === 'string') ? content_markdown.trim() : current.content_markdown;
+  const newCategory = (category && typeof category === 'string') ? category.trim() : current.category;
+  const newStatus = status === 'published' || status === 'draft' ? status : current.status;
+  const newCoverImage = cover_image !== undefined ? cover_image : current.cover_image;
+
+  let newSlug = current.slug;
+  if (slug && typeof slug === 'string' && slug.trim() && slug.trim() !== current.slug) {
+    const formattedSlug = slugifyVietnamese(slug.trim());
+    const duplicate = await db.queryOne<{ id: string }>('SELECT id FROM posts WHERE slug = ? AND id != ?', [formattedSlug, id]);
+    if (duplicate) {
+      return c.json({ error: { code: 'BAD_REQUEST', message: 'Đường dẫn bài viết (slug) đã tồn tại, vui lòng chọn đường dẫn khác.' } }, 400);
+    }
+    newSlug = formattedSlug;
+  }
+
+  const newExcerpt = (excerpt && typeof excerpt === 'string')
+    ? excerpt.trim()
+    : newContent.replace(/[#*`_>\-\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) + '...';
+
+  const now = new Date().toISOString();
+  let publishedAt = current.published_at;
+  if (newStatus === 'published' && !publishedAt) {
+    publishedAt = now;
+  } else if (newStatus === 'draft') {
+    publishedAt = null;
+  }
+
+  await db.execute(
+    `UPDATE posts
+     SET title = ?, slug = ?, excerpt = ?, content_markdown = ?, cover_image = ?, category = ?, status = ?, published_at = ?, updated_at = ?
+     WHERE id = ?`,
+    [newTitle, newSlug, newExcerpt, newContent, newCoverImage, newCategory, newStatus, publishedAt, now, id]
+  );
+
+  await recordAuditLog(admin.adminId, admin.name, 'UPDATE_POST', `post:${newSlug}`, `Cập nhật bài viết: ${newTitle}`);
+
+  const updatedPost = await db.queryOne<Post>('SELECT * FROM posts WHERE id = ?', [id]);
+  return c.json({
+    success: true,
+    message: 'Cập nhật bài viết thành công.',
+    data: updatedPost,
+  });
+});
+
+// DELETE /api/v1/admin/posts/:id - Xóa bài viết
+adminRoutes.delete('/posts/:id', requireAuth, async (c) => {
+  const db = getDb();
+  const admin = c.get('admin') as AdminSession;
+  const id = c.req.param('id');
+
+  const current = await db.queryOne<Post>('SELECT * FROM posts WHERE id = ?', [id]);
+  if (!current) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết để xóa.' } }, 404);
+  }
+
+  await db.execute('DELETE FROM posts WHERE id = ?', [id]);
+  await recordAuditLog(admin.adminId, admin.name, 'DELETE_POST', `post:${current.slug}`, `Xóa bài viết: ${current.title}`);
+
+  return c.json({
+    success: true,
+    message: `Đã xóa bài viết "${current.title}".`,
+  });
 });
 

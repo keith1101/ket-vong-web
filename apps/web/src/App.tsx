@@ -13,9 +13,12 @@ import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminReviewQueuePage } from './pages/admin/AdminReviewQueuePage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
+import { AdminPostsPage } from './pages/admin/AdminPostsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminTemplatesPage } from './pages/admin/AdminTemplatesPage';
 import { AdminLogsPage } from './pages/admin/AdminLogsPage';
+import { PostsPage } from './pages/PostsPage';
+import { PostDetailPage } from './pages/PostDetailPage';
 import { adminGetMe } from './api';
 import type { AdminUser } from './types';
 
@@ -46,6 +49,7 @@ export const App: React.FC = () => {
     const routeToPage: Record<string, string> = {
       review: 'review',
       reports: 'reports',
+      posts: 'posts',
       settings: 'settings',
       templates: 'templates',
       logs: 'logs',
@@ -83,6 +87,12 @@ export const App: React.FC = () => {
     if (currentPath === '/gioi-thieu') return <AboutPage navigate={navigate} />;
     if (currentPath === '/lien-he') return <InfoPage kind="contact" />;
     if (currentPath === '/chinh-sach-bao-mat') return <InfoPage kind="privacy" />;
+    if (currentPath === '/bai-viet') return <PostsPage navigate={navigate} />;
+
+    const postMatch = currentPath.match(/^\/bai-viet\/([a-zA-Z0-9-_]+)/);
+    if (postMatch) {
+      return <PostDetailPage slug={postMatch[1]} navigate={navigate} />;
+    }
 
     // 4. Khu vực Admin Login: /admin/login
     if (currentPath === '/admin/login') {
@@ -124,6 +134,7 @@ export const App: React.FC = () => {
           {adminSubPage === 'dashboard' && <AdminDashboardPage />}
           {adminSubPage === 'review' && <AdminReviewQueuePage />}
           {adminSubPage === 'reports' && <AdminReportsPage />}
+          {adminSubPage === 'posts' && <AdminPostsPage />}
           {adminSubPage === 'settings' && <AdminSettingsPage />}
           {adminSubPage === 'templates' && <AdminTemplatesPage />}
           {adminSubPage === 'logs' && <AdminLogsPage />}

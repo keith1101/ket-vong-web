@@ -95,3 +95,26 @@ export interface AdminUser {
   mustChangePassword?: boolean;
 }
 
+export type PostStatus = 'draft' | 'published';
+
+export interface Post {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content_markdown: string;
+  cover_image: string | null;
+  category: string;
+  status: PostStatus;
+  author_id: string;
+  author_name: string;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostDetailResponse {
+  post: Post;
+  relatedPosts: Post[];
+}
+

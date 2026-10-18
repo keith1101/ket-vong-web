@@ -6,6 +6,7 @@ import { fundRoutes } from './routes/fund.js';
 import { receiptRoutes } from './routes/receipts.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { adminRoutes } from './routes/admin.js';
+import { postsRoutes } from './routes/posts.js';
 import { config } from './config.js';
 
 export function createApp(): Hono {
@@ -39,6 +40,7 @@ export function createApp(): Hono {
   app.route('/api/v1/receipts', receiptRoutes);
   app.route('/api/v1/webhooks', webhookRoutes);
   app.route('/api/v1/admin', adminRoutes);
+  app.route('/api/v1/posts', postsRoutes);
 
   // Xử lý route không tồn tại (404)
   app.notFound((c) => {

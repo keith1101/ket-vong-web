@@ -12,6 +12,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
   const navItems = [
     { label: 'Trang Chủ', path: '/' },
     { label: 'Giới Thiệu', path: '/gioi-thieu' },
+    { label: 'Tin Tức & Hoạt Động', path: '/bai-viet' },
     { label: 'Minh Bạch & Báo Cáo', path: '/minh-bach' },
     { label: 'Liên Hệ', path: '/lien-he' },
   ];

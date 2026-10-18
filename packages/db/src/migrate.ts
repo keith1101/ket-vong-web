@@ -37,7 +37,13 @@ export async function runMigrations() {
 
   try {
     const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-    const migrationFiles = ['001_initial_schema.sql', '002_admin_sessions.sql', '003_default_content.sql', '004_security_hardening.sql'];
+    const migrationFiles = [
+      '001_initial_schema.sql',
+      '002_admin_sessions.sql',
+      '003_default_content.sql',
+      '004_security_hardening.sql',
+      '005_posts_schema.sql',
+    ];
     const rawDb = adapter.getRawDb();
     rawDb.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
       filename TEXT PRIMARY KEY,

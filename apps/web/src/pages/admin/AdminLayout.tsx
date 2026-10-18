@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AdminUser } from '../../types';
 import { adminLogout } from '../../api';
-import { LayoutDashboard, AlertCircle, FileText, Settings, Mail, Shield, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, FileText, Settings, Mail, Shield, LogOut, ArrowLeft, Newspaper } from 'lucide-react';
 
 interface AdminLayoutProps {
   admin: AdminUser;
@@ -26,6 +26,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: 'dashboard', label: 'Tổng Quan & Danh Sách', icon: LayoutDashboard },
     { id: 'review', label: 'Hàng Chờ Ca Lệch', icon: AlertCircle },
     { id: 'reports', label: 'Báo Cáo Hàng Ngày', icon: FileText },
+    { id: 'posts', label: 'Quản Lý Bài Viết', icon: Newspaper },
     ...(isSuperAdmin
       ? [
           { id: 'settings', label: 'Cài Đặt Hệ Thống', icon: Settings },

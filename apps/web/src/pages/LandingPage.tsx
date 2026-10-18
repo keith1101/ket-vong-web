@@ -13,10 +13,12 @@ import {
   ZoomIn,
   MessageSquare,
   Package,
-  Sparkle
+  Sparkle,
+  Calendar,
+  BookOpen
 } from 'lucide-react';
-import { fetchFundSummary, fetchPublicDonations } from '../api';
-import type { FundSummary, PublicDonationItem } from '../types';
+import { fetchFundSummary, fetchPublicDonations, fetchPublicPosts } from '../api';
+import type { FundSummary, PublicDonationItem, Post } from '../types';
 import { DoodleHeart, DoodleStar, SparkleDoodle, WashiTape } from '../components/DoodleDecorations';
 import { TeamMembersSection } from '../components/TeamMembersSection';
 
@@ -63,6 +65,7 @@ const WORKSHOP_PHOTOS = [
 export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
   const [summary, setSummary] = useState<FundSummary | null>(null);
   const [recentDonations, setRecentDonations] = useState<PublicDonationItem[]>([]);
+  const [latestPosts, setLatestPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCostCategory, setSelectedCostCategory] = useState<CostCategoryModalData | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -71,9 +74,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
     Promise.all([
       fetchFundSummary().catch(() => null),
       fetchPublicDonations(1, 5).catch(() => ({ items: [] })),
-    ]).then(([sumData, donData]) => {
+      fetchPublicPosts(1, 3).catch(() => ({ items: [] })),
+    ]).then(([sumData, donData, postsData]) => {
       if (sumData) setSummary(sumData);
       if (donData?.items) setRecentDonations(donData.items);
+      if (postsData?.items) setLatestPosts(postsData.items);
     }).finally(() => {
       setLoading(false);
     });
@@ -751,6 +756,80 @@ export const LandingPage: React.FC<LandingPageProps> = ({ navigate }) => {
           </div>
         </div>
       </section>
+
+      {/* 6.5. BÀI VIẾT & TIN TỨC HOẠT ĐỘNG */}
+      {latestPosts.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--color-border)] pb-4">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--kv-pink-bg)] text-[var(--kv-pink-fg)] text-xs font-bold uppercase tracking-wider font-display">
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Nhật Ký Hành Trình</span>
+              </div>
+              <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--kv-ink)]">
+                Tin Tức & Cập Nhật Mới Nhất
+              </h2>
+              <p className="text-xs sm:text-sm text-[var(--kv-text-soft)]">
+                Những khoảnh khắc ý nghĩa và câu chuyện ấm áp từ workshop thiện nguyện Kết Vòng
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigate('/bai-viet')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--kv-pink)] hover:text-[var(--kv-ink)] transition-colors self-start sm:self-auto font-display py-1"
+            >
+              <span>Xem tất cả bài viết</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestPosts.map((post) => (
+              <article
+                key={post.id}
+                onClick={() => navigate(`/bai-viet/${post.slug}`)}
+                className="group bg-white rounded-3xl border border-[var(--color-border)] overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer"
+              >
+                <div className="relative h-44 w-full bg-gray-100 overflow-hidden">
+                  <img
+                    src={post.cover_image || '/images/coming-soon.png'}
+                    alt={post.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/coming-soon.png';
+                    }}
+                  />
+                  <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold font-display bg-[var(--kv-paper)]/95 backdrop-blur-xs text-[var(--kv-ink)] shadow-xs">
+                    {post.category}
+                  </span>
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-medium text-[var(--kv-text-soft)] flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-[var(--kv-orange)]" />
+                      <span>{new Date(post.published_at || post.created_at).toLocaleDateString('vi-VN')}</span>
+                    </div>
+
+                    <h3 className="font-display font-bold text-base text-[var(--kv-ink)] group-hover:text-[var(--kv-pink)] transition-colors line-clamp-2 leading-snug">
+                      {post.title}
+                    </h3>
+
+                    <p className="text-xs text-[var(--kv-text-soft)] line-clamp-2 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+                  </div>
+
+                  <div className="pt-1 flex items-center gap-1 text-xs font-bold text-[var(--kv-pink)] font-display group-hover:translate-x-1 transition-transform">
+                    <span>Đọc tiếp</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 7. ĐỘI NGŨ 9 THÀNH VIÊN NHÓM TÌNH */}
       <TeamMembersSection />

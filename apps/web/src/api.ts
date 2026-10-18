@@ -1,4 +1,4 @@
-import type { FundSummary, PublicDonationItem, AdminUser, Donation, DailyReport } from './types';
+import type { FundSummary, PublicDonationItem, AdminUser, Donation, DailyReport, Post, PostDetailResponse } from './types';
 
 const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -246,4 +246,67 @@ export async function adminUpdateSettings(settings: Record<string, any>) {
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message || 'Không thể lưu cài đặt');
   return data;
+}
+
+// -----------------------------------------------------------------------------
+// POSTS APIS (BÀI VIẾT)
+// -----------------------------------------------------------------------------
+
+export async function adminGetPosts(): Promise<Post[]> {
+  const res = await apiFetch(`${API_BASE}/admin/posts`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể tải danh sách bài viết');
+  return data.data || [];
+}
+
+export async function adminCreatePost(postData: Partial<Post>): Promise<Post> {
+  const res = await apiFetch(`${API_BASE}/admin/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(postData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể tạo bài viết');
+  return data.data;
+}
+
+export async function adminUpdatePost(id: string, postData: Partial<Post>): Promise<Post> {
+  const res = await apiFetch(`${API_BASE}/admin/posts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(postData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể cập nhật bài viết');
+  return data.data;
+}
+
+export async function adminDeletePost(id: string): Promise<void> {
+  const res = await apiFetch(`${API_BASE}/admin/posts/${id}`, {
+    method: 'DELETE',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể xóa bài viết');
+}
+
+export async function fetchPublicPosts(
+  page: number = 1,
+  limit: number = 10,
+  category?: string
+): Promise<{ items: Post[]; pagination: { current_page: number; per_page: number; total_items: number; total_pages: number } }> {
+  let url = `${API_BASE}/posts?page=${page}&limit=${limit}`;
+  if (category && category !== 'all') {
+    url += `&category=${encodeURIComponent(category)}`;
+  }
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể tải danh sách bài viết');
+  return data.data;
+}
+
+export async function fetchPublicPostDetail(slug: string): Promise<PostDetailResponse> {
+  const res = await fetch(`${API_BASE}/posts/${encodeURIComponent(slug)}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'Không thể tải chi tiết bài viết');
+  return data.data;
 }
